@@ -55,7 +55,6 @@
         this.missColor = {color: {red: 255, green: 128, blue: 0}};    // Dark Orange
 
         // Match success list - last 10 hits
-        this.matchSuccessList = [];
         this.matchLatencyList = [];
 
         // Mouse Click Operation
@@ -117,8 +116,6 @@
         // Throttle hit detection
         this.hitCheckID = Script.setInterval(function(){ handInRadius = false; }, 250);
 
-        this.hasBeatStarted = false;
-
         // Timing
         this.bpm = 100;
         this.beatCounter = 0;
@@ -131,6 +128,8 @@
 
         // High Score
         this.highScore = 0;
+
+        this.hasBeatStarted = false;
 
         this.scoreboardRollingGreetingList = [
             "    COME AND BE A \n"+"    BEATMATCH HERO!\n\n",
@@ -193,25 +192,16 @@
             // Reset matches and misses
             theDrumObjThis.beatsMatched = 0;
             theDrumObjThis.beatsMissed = 0;
-            theDrumObjThis.matchSuccessList = [1,1,1,1,1,1,1,1,1,1];    // Start with 100%
             theDrumObjThis.matchLatencyList = [0,0,0,0,0,0,0,0,0,0];    // Start with 0ms avg
 
-
             // 60,000 ms / 120 BPM = 500 ms per beat
-            // Sound files are allowed to play uninterrupted in their entirety. Is there a Play.OneShot() method like Unity that
-            // allows for multiple triggers of the same audio clip while they are still playing?
             theDrumObjThis.beatIntervalID = Script.setInterval(function () {
 
-                // Trailing matched beat list -- start at '100%'
-                if(theDrumObjThis.matchSuccessList.length > 10){
-                    theDrumObjThis.matchSuccessList.shift();
-                }
                 // Trailing matched beat latency list
                 if(theDrumObjThis.matchLatencyList.length > 10){
                     theDrumObjThis.matchLatencyList.shift();
                 }
 
-                print("match success list: "+theDrumObjThis.matchSuccessList);
                 print("match latency list: "+theDrumObjThis.matchLatencyList);
 
                 // Start beat timer
@@ -233,19 +223,19 @@
                     if(theDrumObjThis.checkUpdateHighScore(theDrumObjThis.beatsMatched)){
                         // Display beat high score!
                         setScoreboard({text: "You beat the high score!:\n"+
-                        theDrumObjThis.highScore+" Beats Matched!!!!\n"+
-                        "Average Match Latency: "+theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList)+"ms late"+"\n"+
-                        // "Accuracy: "+((theDrumObjThis.beatsMatched/theDrumObjThis.beatCounter)*100)+"%"+
-                        "          GAME OVER"});
+                            theDrumObjThis.highScore+" Beats Matched!!!\n"+
+                            "Average Beat Match Latency:"+
+                            "          "+theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList)+"ms late"+"\n"+
+                            "          GAME OVER"});
                     } else {
                         // Display high Score
                         setScoreboard({
-                            text: "          GAME OVER\n"
-                            +"          High score!:" +
+                            text: "          GAME OVER\n"+
+                            "          High score: " +theDrumObjThis.highScore + " Beats Matched!!!" +
                             "\n" +
-                            "Average Match Latency: "+theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList)+"ms late"+"\n"+
-                            // "Accuracy: "+((theDrumObjThis.beatsMatched/theDrumObjThis.beatCounter)*100)+"%"+
-                            theDrumObjThis.highScore + " Beats Matched!!!!"
+                            "Average Beat Match Latency:"+
+                            "          "+theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList)+"ms late"+"\n"
+
                         });
                     }
 
@@ -274,20 +264,19 @@
                     Entities.editEntity(theDrumObjThis.entityID, theDrumObjThis.startingColor);
                 }, theDrumObjThis.getIntervalFromBpm(theDrumObjThis.bpm) / 4);
 
-                // Check if beat was attempted, as unclicked beats count as misses
+                // Check if beat was attempted, as **unclicked beats count as misses**
                 if(!theDrumObjThis.beatAttempted){
                     print("UNCLICKED BEAT!!!!");
                     theDrumObjThis.beatsMissed++;
-                    theDrumObjThis.matchSuccessList.push(0);
 
-                    // Update Scoreboard TODO: Count unclicked beats as misses, then remove this scoreboard update from startBeat
+                    // Update Scoreboard
                     setScoreboard({text: "Beats Played: "+theDrumObjThis.beatCounter+"\n"+
-                    "\n"+
-                    "Beats Matched: "+theDrumObjThis.beatsMatched+"\n"+
-                    "Beats Missed: "+theDrumObjThis.beatsMissed+"\n"+
-                    "\n"+
-                    "Average Match Latency: "+theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList)+"ms late"+"\n"+
-                    "Last beat match: "+theDrumObjThis.hitTimeAfterBeat+"ms late..."});
+                        "\n"+
+                        "Beats Matched: "+theDrumObjThis.beatsMatched+"\n"+
+                        "Beats Missed: "+theDrumObjThis.beatsMissed+"\n"+
+                        "\n"+
+                        "Average Beat Match Latency: "+theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList)+"ms late"+"\n"+
+                        "Last beat match: "+theDrumObjThis.hitTimeAfterBeat+"ms late..."});
                 }
 
                 theDrumObjThis.beatAttempted = false;
@@ -358,19 +347,18 @@
             Entities.editEntity(theDrumObjThis.entityID, theDrumObjThis.matchColor);
 
             // Add 1 to match success list
-            theDrumObjThis.matchSuccessList.push(1);
             theDrumObjThis.matchLatencyList.push(theDrumObjThis.hitTimeAfterBeat);
 
             // print("average match time from beat: "+theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList));
 
             // Display random match scoreboard message
             setScoreboard({text: "Beats Played: "+theDrumObjThis.beatCounter+"\n"+
-            theDrumObjThis.scoreboardMatchResponseList[theDrumObjThis.getRandomInt(0, theDrumObjThis.scoreboardMatchResponseList.length -1)]+"\n"+
-            "Beats Matched: "+theDrumObjThis.beatsMatched+"\n"+
-            "Beats Missed: "+theDrumObjThis.beatsMissed+"\n"+
-            "\n"+
-            "Average Match Latency: "+theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList)+"ms late"+"\n"+
-            "Last beat match: "+theDrumObjThis.hitTimeAfterBeat+"ms late..."});
+                theDrumObjThis.scoreboardMatchResponseList[theDrumObjThis.getRandomInt(0, theDrumObjThis.scoreboardMatchResponseList.length -1)]+"\n"+
+                "Beats Matched: "+theDrumObjThis.beatsMatched+"\n"+
+                "Beats Missed: "+theDrumObjThis.beatsMissed+"\n"+
+                "\n"+
+                "Average Beat Match Latency: "+theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList)+"ms late"+"\n"+
+                "Last beat match: "+theDrumObjThis.hitTimeAfterBeat+"ms late..."});
         },
         missBeat: function(){
 
@@ -387,15 +375,13 @@
 
             // Display random match scoreboard message
             setScoreboard({text: "Beats Played: "+theDrumObjThis.beatCounter+"\n"+
-            "\n"+
-            "Beats Matched: "+theDrumObjThis.beatsMatched+"\n"+
-            "Beats Missed: "+theDrumObjThis.beatsMissed+"\n"+
-            theDrumObjThis.scoreboardMissResponseList[theDrumObjThis.getRandomInt(0, theDrumObjThis.scoreboardMissResponseList.length -1)]+"\n"+
-            "Average Match Latency: "+theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList)+"ms late"+"\n"+
-            "Last beat match: "+theDrumObjThis.hitTimeAfterBeat+"ms late..."});
+                "\n"+
+                "Beats Matched: "+theDrumObjThis.beatsMatched+"\n"+
+                "Beats Missed: "+theDrumObjThis.beatsMissed+"\n"+
+                theDrumObjThis.scoreboardMissResponseList[theDrumObjThis.getRandomInt(0, theDrumObjThis.scoreboardMissResponseList.length -1)]+"\n"+
+                "Average Beat Match Latency: "+theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList)+"ms late"+"\n"+
+                "Last beat match: "+theDrumObjThis.hitTimeAfterBeat+"ms late..."});
 
-            // Add 0 to match success list
-            theDrumObjThis.matchSuccessList.push(0);
         },
         // preloads a pile of data for theDrumObjThis scope
         preload: function(entityID) {
@@ -447,8 +433,6 @@
             };
 
             // make rest of BeatMatcher
-            // new Scoreboard();
-            // Scoreboard();
             new Scoreboard();
         }
     };
