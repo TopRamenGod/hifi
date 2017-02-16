@@ -11,7 +11,6 @@
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 
-
 (function() {
 
     var Scoreboard = function() {
@@ -51,11 +50,9 @@
 
         theDrumObjThis = this;
 
-
         this.beatColor = {color: {red: 0, green: 0, blue: 255}};      // Blue
         this.matchColor = {color: {red: 0, green: 255, blue: 0}};     // Green
         this.missColor = {color: {red: 255, green: 128, blue: 0}};    // Dark Orange
-
 
         // Match success list - last 10 hits
         this.matchSuccessList = [];
@@ -72,7 +69,6 @@
         rightHandControllerJointIndex = MyAvatar.getJointIndex("_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND");
         leftHandControllerJointIndex = MyAvatar.getJointIndex("_CAMERA_RELATIVE_CONTROLLER_LEFTHAND");
         var handInRadius = false;
-
 
         // Hand Controller Operation
         this.checkForHandControllerDrumHit = function(){
@@ -120,7 +116,6 @@
 
         // Throttle hit detection
         this.hitCheckID = Script.setInterval(function(){ handInRadius = false; }, 250);
-
 
         this.hasBeatStarted = false;
 
