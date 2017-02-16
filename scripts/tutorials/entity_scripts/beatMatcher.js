@@ -14,182 +14,6 @@
 
 (function() {
 
-    var theDrumObjThis = this;
-
-    // Helper functions
-    theDrumObjThis.getIntervalFromBpm = function(bpm){ return 60000 / bpm; };
-
-    theDrumObjThis.getRandomInt = function(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; };
-
-    // Update high score if high score beaten
-    theDrumObjThis.checkUpdateHighScore = function(currentScore){
-        if(currentScore > theDrumObjThis.highScore){
-            theDrumObjThis.highScore = currentScore;
-            return true;
-        } else {
-            return false;
-        }
-    };
-
-    theDrumObjThis.getAverageFromList = function(list){
-        var sum = list.reduce(function(acc, val) { return acc + val; }, 0);
-        return Math.floor(sum/list.length); // The player probably doesn't care about precision to the millionth of a second
-    };
-
-    rightHandControllerJointIndex = MyAvatar.getJointIndex("_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND");
-    leftHandControllerJointIndex = MyAvatar.getJointIndex("_CAMERA_RELATIVE_CONTROLLER_LEFTHAND");
-    var handInRadius = false;
-
-    // Mouse Click Operation
-    theDrumObjThis.clickDownOnEntity = function(entityID, mouseEvent){
-        if (Entities.getEntityProperties(theDrumObjThis.entityID).name == 'BeatMatcher_Drum') {
-            Drum.prototype.hitDrum();
-            print("Drum clicked!!!!");
-        }
-    };
-
-    // Hand Controller Operation
-    theDrumObjThis.checkForHandControllerDrumHit = function(){
-
-        rightHandControllerOrientation = Quat.multiply(MyAvatar.orientation, MyAvatar.getAbsoluteJointRotationInObjectFrame(rightHandControllerJointIndex));
-        rightHandControllerPosition = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, MyAvatar.getAbsoluteJointTranslationInObjectFrame(rightHandControllerJointIndex)));
-
-        leftHandControllerOrientation = Quat.multiply(MyAvatar.orientation, MyAvatar.getAbsoluteJointRotationInObjectFrame(leftHandControllerJointIndex));
-        lefthandControllerPosition = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, MyAvatar.getAbsoluteJointTranslationInObjectFrame(leftHandControllerJointIndex)));
-
-        // right hand distance to drum
-        var rightHandDistanceToDrum = Vec3.distance(rightHandControllerPosition, Entities.getEntityProperties(theDrumObjThis.entityID).position);
-        var leftHandDistanceToDrum = Vec3.distance(lefthandControllerPosition, Entities.getEntityProperties(theDrumObjThis.entityID).position);
-
-        if ((rightHandDistanceToDrum <= 0.13 || leftHandDistanceToDrum <= 0.13) && !handInRadius) {
-            handInRadius = true;
-            print(":::::::::TRIGGER!:::::::::");
-            Drum.prototype.hitDrum();
-        }
-    };
-
-    // register checkForHandControllerDrumHit callback
-    Script.update.connect(theDrumObjThis.checkForHandControllerDrumHit);    // This may simply be checking too often
-
-    // Throttle hit detection
-    theDrumObjThis.hitCheckID = Script.setInterval(function(){ handInRadius = false; }, 250);
-
-    // preloads a pile of data for theDrumObjThis scope
-    theDrumObjThis.preload = function(entityID) {
-        print("preload(" + entityID + ")");
-
-        // set our id so other methods can get it.
-        theDrumObjThis.entityID = entityID;
-        theDrumObjThis.entityPosition = Entities.getEntityProperties(theDrumObjThis.entityID).position;
-
-        // Colors
-        theDrumObjThis.startingColorObject = Entities.getEntityProperties(theDrumObjThis.entityID).color;   // Starting Color on load
-        theDrumObjThis.startingColor = {                                                                    // Starting Color on BeatMatcher reset
-            color: {
-                red: theDrumObjThis.startingColorObject.red,
-                green: theDrumObjThis.startingColorObject.green,
-                blue: theDrumObjThis.startingColorObject.blue
-            }
-        };
-        theDrumObjThis.beatColor = {color: {red: 0, green: 0, blue: 255}};      // Blue
-        theDrumObjThis.matchColor = {color: {red: 0, green: 255, blue: 0}};     // Green
-        theDrumObjThis.missColor = {color: {red: 255, green: 128, blue: 0}};    // Dark Orange
-
-        // Sounds
-        //// Beat
-        theDrumObjThis.beatURL = 'http://theblacksun.s3.amazonaws.com/props/beatMatcher/beat_mono.wav';
-        theDrumObjThis.beatSound = SoundCache.getSound(theDrumObjThis.beatURL);   // TODO: condition for Sound.hasDownloaded()
-        theDrumObjThis.beatSoundOptions =  {
-            position: Entities.getEntityProperties(theDrumObjThis.entityID).position, // Probably just define this inside of the BeatMatcher prototype
-            volume: 0.3,
-            loop: false,
-            stereo: false
-        };
-
-        //// Miss
-        theDrumObjThis.missURL = 'http://theblacksun.s3.amazonaws.com/props/beatMatcher/miss_04.wav';
-        theDrumObjThis.missSound = SoundCache.getSound(theDrumObjThis.missURL);   // TODO: condition for Sound.hasDownloaded()
-        theDrumObjThis.missSoundOptions =  {
-            position: Entities.getEntityProperties(theDrumObjThis.entityID).position,
-            volume: 0.3,
-            loop: false,
-            stereo: true
-        };
-
-        //// GameOver
-        theDrumObjThis.gameOverURL = 'http://theblacksun.s3.amazonaws.com/props/beatMatcher/GameOver.wav';
-        theDrumObjThis.gameOverSound = SoundCache.getSound(theDrumObjThis.gameOverURL);   // TODO: condition for Sound.hasDownloaded()
-        theDrumObjThis.gameOverSoundOptions =  {
-            position: Entities.getEntityProperties(theDrumObjThis.entityID).position,
-            volume: 0.3,
-            loop: false,
-            stereo: true
-        };
-
-        theDrumObjThis.hasBeatStarted = false;
-
-        // Timing
-        theDrumObjThis.bpm = 100;
-        theDrumObjThis.beatCounter = 0;
-        theDrumObjThis.matchTimer = 0;
-        theDrumObjThis.missLimit = 5;
-        theDrumObjThis.beatAttempted = false;
-
-        // Matches and Misses
-        theDrumObjThis.beatsMatched = 0;
-        theDrumObjThis.beatsMissed = 0;
-
-        // High Score
-        theDrumObjThis.highScore = 0;
-
-        // Match success list - last 10 hits
-        theDrumObjThis.matchSuccessList = [];
-        theDrumObjThis.matchLatencyList = [];
-
-        theDrumObjThis.scoreboardRollingGreetingList = [
-            "    COME AND BE A \n"+"    BEATMATCH HERO!\n\n",
-            "    TEST YOUR SKILLS!\n\n",
-            "    ARE YOU A BAD \n"+"    ENOUGH DUDE?\n\n",
-            "    WANNA BE AWESOME.... \n"+"    ...ER?\n\n"
-        ];
-
-        // Scoreboard messages
-        theDrumObjThis.scoreboardCongratsResponseList = [
-            'You beat the high score!!!',
-            'YOUR NAME SHALL BE SUNG IN THE HALLS OF VALHALLA'];
-        theDrumObjThis.scoreboardTimeoutResponseList = [
-            'Time\'s up!',
-            '5 missed beats in a row....',
-            'That could have gone better...'];
-        theDrumObjThis.scoreboardMatchResponseList = [
-            'Beat matched!',
-            'Well done!',
-            'Awesome!!!',
-            'good',
-            'GREAT!',
-            'Superb!'];
-        theDrumObjThis.scoreboardMissResponseList = [
-            'Beat missed :(',
-            'NOPE',
-            'fail.',
-            'miss.',
-            'MISS',
-            'You can do better...',
-            'try again',
-            'hmm...'
-        ];
-
-        // Scoreboard Greeting
-        theDrumObjThis.scoreboardGreeting = "BeatMatcher 5000\n\n"+
-            theDrumObjThis.scoreboardRollingGreetingList[theDrumObjThis.getRandomInt(0, theDrumObjThis.scoreboardRollingGreetingList.length -1)]+"\n"+
-            "\tHit the white sphere to start!\n";
-
-        // make rest of BeatMatcher
-        // new Scoreboard();
-        Scoreboard();
-    };
-
-
     var Scoreboard = function() {
         var scoreboardProperties = {
             position: Vec3.sum(Vec3.sum(MyAvatar.position, {
@@ -218,14 +42,141 @@
 
         setScoreboard = function(newTextProperty) {
             Entities.editEntity(_scoreboard, newTextProperty);
+            print("Scoreboard text changed to:");
+            print(JSON.stringify(Entities.getEntityProperties(_scoreboard).text));
         }
     };
 
-    function Drum() {}
+    Drum = function() {
+
+        theDrumObjThis = this;
+
+
+        this.beatColor = {color: {red: 0, green: 0, blue: 255}};      // Blue
+        this.matchColor = {color: {red: 0, green: 255, blue: 0}};     // Green
+        this.missColor = {color: {red: 255, green: 128, blue: 0}};    // Dark Orange
+
+
+        // Match success list - last 10 hits
+        this.matchSuccessList = [];
+        this.matchLatencyList = [];
+
+        // Mouse Click Operation
+        this.clickDownOnEntity = function(entityID, mouseEvent){
+            if (Entities.getEntityProperties(theDrumObjThis.entityID).name == 'BeatMatcher_Drum') {
+                this.hitDrum();
+                print("Drum clicked!!!!");
+            }
+        };
+
+        rightHandControllerJointIndex = MyAvatar.getJointIndex("_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND");
+        leftHandControllerJointIndex = MyAvatar.getJointIndex("_CAMERA_RELATIVE_CONTROLLER_LEFTHAND");
+        var handInRadius = false;
+
+
+        // Hand Controller Operation
+        this.checkForHandControllerDrumHit = function(){
+
+            rightHandControllerOrientation = Quat.multiply(MyAvatar.orientation, MyAvatar.getAbsoluteJointRotationInObjectFrame(rightHandControllerJointIndex));
+            rightHandControllerPosition = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, MyAvatar.getAbsoluteJointTranslationInObjectFrame(rightHandControllerJointIndex)));
+
+            leftHandControllerOrientation = Quat.multiply(MyAvatar.orientation, MyAvatar.getAbsoluteJointRotationInObjectFrame(leftHandControllerJointIndex));
+            lefthandControllerPosition = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, MyAvatar.getAbsoluteJointTranslationInObjectFrame(leftHandControllerJointIndex)));
+
+            // right hand distance to drum
+            var rightHandDistanceToDrum = Vec3.distance(rightHandControllerPosition, Entities.getEntityProperties(theDrumObjThis.entityID).position);
+            var leftHandDistanceToDrum = Vec3.distance(lefthandControllerPosition, Entities.getEntityProperties(theDrumObjThis.entityID).position);
+
+            if ((rightHandDistanceToDrum <= 0.13 || leftHandDistanceToDrum <= 0.13) && !handInRadius) {
+                handInRadius = true;
+                print(":::::::::TRIGGER!:::::::::");
+                // Drum.prototype.hitDrum();
+                this.hitDrum();
+            }
+        };
+
+        // register checkForHandControllerDrumHit callback
+        Script.update.connect(this.checkForHandControllerDrumHit);    // This may simply be checking too often
+
+        // Helper functions
+        this.getIntervalFromBpm = function(bpm){ return 60000 / bpm; };
+
+        this.getAverageFromList = function(list){
+            var sum = list.reduce(function(acc, val) { return acc + val; }, 0);
+            return Math.floor(sum/list.length); // The player probably doesn't care about precision to the millionth of a second
+        };
+
+        this.getRandomInt = function(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; };
+
+        // Update high score if high score beaten
+        this.checkUpdateHighScore = function(currentScore){
+            if(currentScore > theDrumObjThis.highScore){
+                theDrumObjThis.highScore = currentScore;
+                return true;
+            } else {
+                return false;
+            }
+        };
+
+        // Throttle hit detection
+        this.hitCheckID = Script.setInterval(function(){ handInRadius = false; }, 250);
+
+
+        this.hasBeatStarted = false;
+
+        // Timing
+        this.bpm = 100;
+        this.beatCounter = 0;
+        this.missLimit = 5;
+        this.beatAttempted = false;
+
+        // Matches and Misses
+        this.beatsMatched = 0;
+        this.beatsMissed = 0;
+
+        // High Score
+        this.highScore = 0;
+
+        this.scoreboardRollingGreetingList = [
+            "    COME AND BE A \n"+"    BEATMATCH HERO!\n\n",
+            "    TEST YOUR SKILLS!\n\n",
+            "    ARE YOU A BAD \n"+"    ENOUGH DUDE?\n\n",
+            "    WANNA BE AWESOME.... \n"+"    ...ER?\n\n"
+        ];
+
+        // Scoreboard messages
+        this.scoreboardCongratsResponseList = [
+            'You beat the high score!!!',
+            'YOUR NAME SHALL BE SUNG IN THE HALLS OF VALHALLA'];
+        this.scoreboardTimeoutResponseList = [
+            'Time\'s up!',
+            '5 missed beats in a row....',
+            'That could have gone better...'];
+        this.scoreboardMatchResponseList = [
+            'Beat matched!',
+            'Well done!',
+            'Awesome!!!',
+            'good',
+            'GREAT!',
+            'Superb!'];
+        this.scoreboardMissResponseList = [
+            'Beat missed :(',
+            'NOPE',
+            'fail.',
+            'miss.',
+            'MISS',
+            'You can do better...',
+            'try again',
+            'hmm...'
+        ];
+
+        // Scoreboard Greeting
+        this.scoreboardGreeting = "BeatMatcher 5000\n\n"+
+            this.scoreboardRollingGreetingList[this.getRandomInt(0, this.scoreboardRollingGreetingList.length -1)]+"\n"+
+            "\tHit the white sphere to start!\n";
+    };
 
     Drum.prototype = {
-
-        bpm: theDrumObjThis.bpm,
 
         hitDrum: function(){
 
@@ -280,10 +231,8 @@
                 if(theDrumObjThis.beatsMissed >= theDrumObjThis.missLimit){
                     print("You missed too many beats!!!!!!");
 
-
                     // Stop beat
-                    Drum.prototype.stopBeat();  //// <- Apparently this is the correct way to references these functions
-                                                //// in the function prototypes
+                    theDrumObjThis.stopBeat();
 
                     // Check beats matched against high score
                     if(theDrumObjThis.checkUpdateHighScore(theDrumObjThis.beatsMatched)){
@@ -452,6 +401,62 @@
 
             // Add 0 to match success list
             theDrumObjThis.matchSuccessList.push(0);
+        },
+        // preloads a pile of data for theDrumObjThis scope
+        preload: function(entityID) {
+            print("preload(" + entityID + ")");
+
+            // set our id so other methods can get it.
+            this.entityID = entityID;
+
+            this.entityPosition = Entities.getEntityProperties(this.entityID).position;
+
+            // Drum Colors
+            this.startingColor = {  // Starting Color on BeatMatcher load/reset
+                color: {
+                    red: Entities.getEntityProperties(this.entityID).color.red,
+                    green: Entities.getEntityProperties(this.entityID).color.green,
+                    blue: Entities.getEntityProperties(this.entityID).color.blue
+                }
+            };
+
+            // Sounds
+            //// Beat
+            theDrumObjThis.beatURL = 'http://theblacksun.s3.amazonaws.com/props/beatMatcher/beat_mono.wav';
+            theDrumObjThis.beatSound = SoundCache.getSound(theDrumObjThis.beatURL);   // TODO: condition for Sound.hasDownloaded()
+            theDrumObjThis.beatSoundOptions =  {
+                position: Entities.getEntityProperties(theDrumObjThis.entityID).position, // Probably just define this inside of the BeatMatcher prototype
+                volume: 0.3,
+                loop: false,
+                stereo: false
+            };
+
+            //// Miss
+            theDrumObjThis.missURL = 'http://theblacksun.s3.amazonaws.com/props/beatMatcher/miss_04.wav';
+            theDrumObjThis.missSound = SoundCache.getSound(theDrumObjThis.missURL);   // TODO: condition for Sound.hasDownloaded()
+            theDrumObjThis.missSoundOptions =  {
+                position: Entities.getEntityProperties(theDrumObjThis.entityID).position,
+                volume: 0.3,
+                loop: false,
+                stereo: true
+            };
+
+            //// GameOver
+            theDrumObjThis.gameOverURL = 'http://theblacksun.s3.amazonaws.com/props/beatMatcher/GameOver.wav';
+            theDrumObjThis.gameOverSound = SoundCache.getSound(theDrumObjThis.gameOverURL);   // TODO: condition for Sound.hasDownloaded()
+            theDrumObjThis.gameOverSoundOptions =  {
+                position: Entities.getEntityProperties(theDrumObjThis.entityID).position,
+                volume: 0.3,
+                loop: false,
+                stereo: true
+            };
+
+            // make rest of BeatMatcher
+            // new Scoreboard();
+            // Scoreboard();
+            new Scoreboard();
         }
     };
+
+    return new Drum();
 });

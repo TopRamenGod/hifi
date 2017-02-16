@@ -14,32 +14,26 @@
 
 var SCRIPT_URL = "http://theblacksun.s3.amazonaws.com/props/beatMatcher/beatMatcher.js";
 
-// define and add drum entity here to be parent entity for BeatMatcher
-function makeDrum()
-{
-    var beatMatcherProperties = {
-        position: Vec3.sum(Vec3.sum(MyAvatar.position, {
-            x: 0,
-            y: 0.6,
-            z: 0
-        }), Vec3.multiply(1, Quat.getFront(Camera.getOrientation()))),
-        name: 'BeatMatcher_Drum',
-        type: 'Sphere',
-        script: SCRIPT_URL,
-        dimensions: {
-            x: 0.12,
-            y: 0.12,
-            z: 0.12
-        },
-        lifetime: 3600,
-        userData: JSON.stringify({
-            grabbableKey: {wantsTrigger: true}
-        })
-    }
-
-    var _beatMatcher = Entities.addEntity(beatMatcherProperties);
-
-    Script.stop();
+var beatMatcherProperties = {
+    position: Vec3.sum(Vec3.sum(MyAvatar.position, {
+        x: 0,
+        y: 0.6,
+        z: 0
+    }), Vec3.multiply(1, Quat.getFront(Camera.getOrientation()))),
+    name: 'BeatMatcher_Drum',
+    type: 'Sphere',
+    script: SCRIPT_URL,
+    dimensions: {
+        x: 0.12,
+        y: 0.12,
+        z: 0.12
+    },
+    lifetime: 3600,
+    userData: JSON.stringify({
+        grabbableKey: {wantsTrigger: true}
+    })
 }
 
-makeDrum();
+var _beatMatcher = Entities.addEntity(beatMatcherProperties);
+
+Script.stop();
