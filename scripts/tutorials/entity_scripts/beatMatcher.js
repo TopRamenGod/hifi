@@ -404,33 +404,36 @@
             // Sounds
             //// Beat
             theDrumObjThis.beatURL = 'http://theblacksun.s3.amazonaws.com/props/beatMatcher/beat_mono.wav';
-            theDrumObjThis.beatSound = SoundCache.getSound(theDrumObjThis.beatURL);   // TODO: condition for Sound.hasDownloaded()
+            theDrumObjThis.beatSound = SoundCache.getSound(theDrumObjThis.beatURL);
             theDrumObjThis.beatSoundOptions =  {
                 position: Entities.getEntityProperties(theDrumObjThis.entityID).position, // Probably just define this inside of the BeatMatcher prototype
                 volume: 0.3,
                 loop: false,
                 stereo: false
             };
+            if (!theDrumObjThis.beatSound.downloaded){ print("*****"+theDrumObjThis.beatURL+" failed to download!******"); }
 
             //// Miss
             theDrumObjThis.missURL = 'http://theblacksun.s3.amazonaws.com/props/beatMatcher/miss_04.wav';
-            theDrumObjThis.missSound = SoundCache.getSound(theDrumObjThis.missURL);   // TODO: condition for Sound.hasDownloaded()
+            theDrumObjThis.missSound = SoundCache.getSound(theDrumObjThis.missURL);
             theDrumObjThis.missSoundOptions =  {
                 position: Entities.getEntityProperties(theDrumObjThis.entityID).position,
                 volume: 0.3,
                 loop: false,
                 stereo: true
             };
+            if (!theDrumObjThis.missSound.downloaded){ print("*****"+theDrumObjThis.missURL+" failed to download!******"); }
 
             //// GameOver
             theDrumObjThis.gameOverURL = 'http://theblacksun.s3.amazonaws.com/props/beatMatcher/GameOver.wav';
-            theDrumObjThis.gameOverSound = SoundCache.getSound(theDrumObjThis.gameOverURL);   // TODO: condition for Sound.hasDownloaded()
+            theDrumObjThis.gameOverSound = SoundCache.getSound(theDrumObjThis.gameOverURL);
             theDrumObjThis.gameOverSoundOptions =  {
                 position: Entities.getEntityProperties(theDrumObjThis.entityID).position,
                 volume: 0.3,
                 loop: false,
                 stereo: true
             };
+            if (!theDrumObjThis.gameOverSound.downloaded){ print("*****"+theDrumObjThis.gameOverURL+" failed to download!******"); }
 
             // make rest of BeatMatcher
             new Scoreboard();
