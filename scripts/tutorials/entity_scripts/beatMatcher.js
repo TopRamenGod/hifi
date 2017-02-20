@@ -72,15 +72,21 @@
         // Hand Controller Operation
         this.checkForHandControllerDrumHit = function(){
 
-            rightHandControllerOrientation = Quat.multiply(MyAvatar.orientation, MyAvatar.getAbsoluteJointRotationInObjectFrame(rightHandControllerJointIndex));
-            rightHandControllerPosition = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, MyAvatar.getAbsoluteJointTranslationInObjectFrame(rightHandControllerJointIndex)));
+            rightHandControllerOrientation = Quat.multiply(MyAvatar.orientation,
+                MyAvatar.getAbsoluteJointRotationInObjectFrame(rightHandControllerJointIndex));
+            rightHandControllerPosition = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation,
+                MyAvatar.getAbsoluteJointTranslationInObjectFrame(rightHandControllerJointIndex)));
 
-            leftHandControllerOrientation = Quat.multiply(MyAvatar.orientation, MyAvatar.getAbsoluteJointRotationInObjectFrame(leftHandControllerJointIndex));
-            lefthandControllerPosition = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, MyAvatar.getAbsoluteJointTranslationInObjectFrame(leftHandControllerJointIndex)));
+            leftHandControllerOrientation = Quat.multiply(MyAvatar.orientation,
+                MyAvatar.getAbsoluteJointRotationInObjectFrame(leftHandControllerJointIndex));
+            lefthandControllerPosition = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation,
+                MyAvatar.getAbsoluteJointTranslationInObjectFrame(leftHandControllerJointIndex)));
 
             // right hand distance to drum
-            var rightHandDistanceToDrum = Vec3.distance(rightHandControllerPosition, Entities.getEntityProperties(theDrumObjThis.entityID).position);
-            var leftHandDistanceToDrum = Vec3.distance(lefthandControllerPosition, Entities.getEntityProperties(theDrumObjThis.entityID).position);
+            var rightHandDistanceToDrum = Vec3.distance(rightHandControllerPosition,
+                Entities.getEntityProperties(theDrumObjThis.entityID).position);
+            var leftHandDistanceToDrum = Vec3.distance(lefthandControllerPosition,
+                Entities.getEntityProperties(theDrumObjThis.entityID).position);
 
             if ((rightHandDistanceToDrum <= 0.13 || leftHandDistanceToDrum <= 0.13) && !handInRadius) {
                 handInRadius = true;
@@ -117,7 +123,7 @@
         this.hitCheckID = Script.setInterval(function(){ handInRadius = false; }, 250);
 
         // Timing
-        this.bpm = 100;
+        this.bpm = 80;
         this.beatCounter = 0;
         this.missLimit = 5;
         this.beatAttempted = false;
@@ -139,13 +145,13 @@
         ];
 
         // Scoreboard messages
-        this.scoreboardCongratsResponseList = [
-            'You beat the high score!!!',
-            'YOUR NAME SHALL BE SUNG IN THE HALLS OF VALHALLA'];
-        this.scoreboardTimeoutResponseList = [
-            'Time\'s up!',
-            '5 missed beats in a row....',
-            'That could have gone better...'];
+        // this.scoreboardCongratsResponseList = [
+        //     'You beat the high score!!!',
+        //     'YOUR NAME SHALL BE SUNG IN THE HALLS OF VALHALLA'];
+        // this.scoreboardTimeoutResponseList = [
+        //     'Time\'s up!',
+        //     '5 missed beats in a row....',
+        //     'That could have gone better...'];
         this.scoreboardMatchResponseList = [
             'Beat matched!',
             'Well done!',
@@ -168,6 +174,7 @@
         this.scoreboardGreeting = "BeatMatcher 5000\n\n"+
             this.scoreboardRollingGreetingList[this.getRandomInt(0, this.scoreboardRollingGreetingList.length -1)]+"\n"+
             "\tHit the white sphere to start!\n";
+
     };
 
     Drum.prototype = {
@@ -177,15 +184,23 @@
             // :::: Start beat ::::
             if(!theDrumObjThis.hasBeatStarted && theDrumObjThis.beatCounter <= 0) {
 
+                // set timestamp for *first* beat
+                theDrumObjThis.futureBeat = Date.now() + theDrumObjThis.getIntervalFromBpm(theDrumObjThis.bpm);
+
                 theDrumObjThis.hasBeatStarted = true;
+                this.shouldCheckTime = true;
                 this.startBeat();
 
                 // :::: Check drum hit if already started ::::
-            } else if(theDrumObjThis.hasBeatStarted && (theDrumObjThis.beatCounter > 0 && theDrumObjThis.beatsMissed <= theDrumObjThis.missLimit)){
+            } else if(theDrumObjThis.hasBeatStarted && (theDrumObjThis.beatCounter > 0 &&
+                theDrumObjThis.beatsMissed <= theDrumObjThis.missLimit)){
 
                 // :::: Check if Drum hit is beat miss or match ::::
                 this.checkDrumHit();
             }
+        },
+        shouldBeatFire: function(){
+            return this.shouldCheckTime && (Date.now() >= this.futureBeat);
         },
         startBeat: function() {
 
@@ -195,93 +210,105 @@
             theDrumObjThis.matchLatencyList = [0,0,0,0,0,0,0,0,0,0];    // Start with 0ms avg
 
             // 60,000 ms / 120 BPM = 500 ms per beat
-            theDrumObjThis.beatIntervalID = Script.setInterval(function () {
+            // theDrumObjThis.beatIntervalID = Script.setInterval(function () {
+            // heartBeat interval for checking to see if the right amount of time has passed for a beat to occur
+            theDrumObjThis.heartBeatIntervalID = Script.setInterval(function () {
+            // fireBeat = function () {
 
-                // Trailing matched beat latency list
-                if(theDrumObjThis.matchLatencyList.length > 10){
-                    theDrumObjThis.matchLatencyList.shift();
-                }
+                // if(theDrumObjThis.shouldBeatFire()) {
+                if(Date.now() >= theDrumObjThis.futureBeat) {
 
-                print("match latency list: "+theDrumObjThis.matchLatencyList);
+                    // set timestamp for *next* beat
+                    theDrumObjThis.futureBeat = Date.now() + theDrumObjThis.getIntervalFromBpm(theDrumObjThis.bpm);
 
-                // Start beat timer
-                theDrumObjThis.timeAtStartOfBeat = new Date();
-                print("time at start of beat: "+theDrumObjThis.timeAtStartOfBeat);
+                    // Trailing matched beat latency list
+                    if (theDrumObjThis.matchLatencyList.length > 10) {
+                        theDrumObjThis.matchLatencyList.shift();
+                    }
 
-                // Update audio position with position of entity
-                // TODO: Should probably have this follow the update loop, rather than per beat
-                theDrumObjThis.beatSoundOptions.position = Entities.getEntityProperties(theDrumObjThis.entityID).position;
+                    // print("match latency list: "+theDrumObjThis.matchLatencyList);
 
-                // :::: Stop drum after beatsMissed limit ::::
-                if(theDrumObjThis.beatsMissed >= theDrumObjThis.missLimit){
-                    print("You missed too many beats!!!!!!");
+                    // Start beat timer
+                    theDrumObjThis.timeAtStartOfBeat = new Date();
+                    // print("time at start of beat: "+theDrumObjThis.timeAtStartOfBeat);
 
-                    // Stop beat
-                    theDrumObjThis.stopBeat();
+                    // Update audio position with position of entity
+                    theDrumObjThis.beatSoundOptions.position = Entities.getEntityProperties(theDrumObjThis.entityID).position;
 
-                    // Check beats matched against high score
-                    if(theDrumObjThis.checkUpdateHighScore(theDrumObjThis.beatsMatched)){
-                        // Display beat high score!
-                        setScoreboard({text: "You beat the high score!:\n"+
-                            theDrumObjThis.highScore+" Beats Matched!!!\n"+
-                            "Average Beat Match Latency:"+
-                            "          "+theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList)+"ms late"+"\n"+
-                            "          GAME OVER"});
-                    } else {
-                        // Display high Score
+                    // :::: Stop drum after beatsMissed limit ::::
+                    if (theDrumObjThis.beatsMissed >= theDrumObjThis.missLimit) {
+                        // print("You missed too many beats!!!!!!");
+
+                        // Stop beat
+                        theDrumObjThis.stopBeat();
+
+                        // Check beats matched against high score
+                        if (theDrumObjThis.checkUpdateHighScore(theDrumObjThis.beatsMatched)) {
+                            // Display beat high score!
+                            setScoreboard({
+                                text: "You beat the high score!:\n" +
+                                theDrumObjThis.highScore + " Beats Matched!!!\n" +
+                                "Average Beat Match Latency:" +
+                                "          " + theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList) + "ms late" + "\n" +
+                                "          GAME OVER"
+                            });
+                        } else {
+                            // Display high Score
+                            setScoreboard({
+                                text: "          GAME OVER\n" +
+                                "          High score: " + theDrumObjThis.highScore + " Beats Matched!!!" +
+                                "\n" +
+                                "Average Beat Match Latency:" +
+                                "          " + theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList) + "ms late" + "\n"
+
+                            });
+                        }
+
+                        // Display High score for a few seconds before resetting
+                        Script.setTimeout(function () {
+                            setScoreboard({text: theDrumObjThis.scoreboardGreeting});
+                        }, 6000);
+
+                        return;
+                    }
+
+                    // Play beat!
+                    theDrumObjThis.soundInjector = Audio.playSound(theDrumObjThis.beatSound, theDrumObjThis.beatSoundOptions);
+
+                    // Count beat
+                    theDrumObjThis.beatCounter++;
+
+                    // pulse color to red on beat
+                    Entities.editEntity(theDrumObjThis.entityID, theDrumObjThis.beatColor);
+
+                    // Reset to starting color after beat
+                    theDrumObjThis.colorResetTimeoutID = Script.setTimeout(function () {
+                        Entities.editEntity(theDrumObjThis.entityID, theDrumObjThis.startingColor);
+                    }, theDrumObjThis.getIntervalFromBpm(theDrumObjThis.bpm) / 4);
+
+                    // Check if beat was attempted, as **unclicked beats count as misses**
+                    if (!theDrumObjThis.beatAttempted) {
+                        theDrumObjThis.beatsMissed++;
+
+                        // Update Scoreboard
                         setScoreboard({
-                            text: "          GAME OVER\n"+
-                            "          High score: " +theDrumObjThis.highScore + " Beats Matched!!!" +
+                            text: "Beats Played: " + theDrumObjThis.beatCounter + "\n" +
                             "\n" +
-                            "Average Beat Match Latency:"+
-                            "          "+theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList)+"ms late"+"\n"
-
+                            "Beats Matched: " + theDrumObjThis.beatsMatched + "\n" +
+                            "Beats Missed: " + theDrumObjThis.beatsMissed + "\n" +
+                            "\n" +
+                            "Average Beat Match Latency: " + theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList) + "ms late" + "\n" +
+                            "Last beat match: " + theDrumObjThis.hitTimeAfterBeat + "ms late..."
                         });
                     }
 
-                    // Display High score for a few seconds before resetting
-                    Script.setTimeout(function(){
-                        setScoreboard({text: theDrumObjThis.scoreboardGreeting});
-                    }, 6000);
+                    theDrumObjThis.beatAttempted = false;
 
-                    return;
                 }
 
-                // Play beat!
-                theDrumObjThis.soundInjector = Audio.playSound(theDrumObjThis.beatSound, theDrumObjThis.beatSoundOptions);
-                print("Beat played!");
-
-                // Count beat
-                theDrumObjThis.beatCounter++;
-
-                // print("beats played: " + theDrumObjThis.beatCounter);
-
-                // pulse color to red on beat
-                Entities.editEntity(theDrumObjThis.entityID, theDrumObjThis.beatColor);
-
-                // Reset to starting color after beat
-                theDrumObjThis.colorResetTimeoutID = Script.setTimeout(function () {
-                    Entities.editEntity(theDrumObjThis.entityID, theDrumObjThis.startingColor);
-                }, theDrumObjThis.getIntervalFromBpm(theDrumObjThis.bpm) / 4);
-
-                // Check if beat was attempted, as **unclicked beats count as misses**
-                if(!theDrumObjThis.beatAttempted){
-                    print("UNCLICKED BEAT!!!!");
-                    theDrumObjThis.beatsMissed++;
-
-                    // Update Scoreboard
-                    setScoreboard({text: "Beats Played: "+theDrumObjThis.beatCounter+"\n"+
-                        "\n"+
-                        "Beats Matched: "+theDrumObjThis.beatsMatched+"\n"+
-                        "Beats Missed: "+theDrumObjThis.beatsMissed+"\n"+
-                        "\n"+
-                        "Average Beat Match Latency: "+theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList)+"ms late"+"\n"+
-                        "Last beat match: "+theDrumObjThis.hitTimeAfterBeat+"ms late..."});
-                }
-
-                theDrumObjThis.beatAttempted = false;
-
-            }, theDrumObjThis.getIntervalFromBpm(theDrumObjThis.bpm));
+                // }, theDrumObjThis.getIntervalFromBpm(theDrumObjThis.bpm));
+            // }.bind(this, 5));
+            }, 5);
         },
         // :::: Stop Beat ::::
         stopBeat: function() {
@@ -295,7 +322,8 @@
             setScoreboard({text: theDrumObjThis.scoreboardGreeting});
 
             // Reset Intervals
-            Script.clearInterval(theDrumObjThis.beatIntervalID);
+            // Script.clearInterval(theDrumObjThis.beatIntervalID);
+            Script.clearInterval(theDrumObjThis.heartBeatIntervalID);
 
             // Reset Timeout
             Script.clearTimeout(theDrumObjThis.colorResetTimeoutID);
@@ -309,10 +337,13 @@
             theDrumObjThis.hasBeatStarted = false;
             theDrumObjThis.beatAttempted = false;
 
+            // turn off heartbeat
+            this.shouldCheckTime = false;
+
         },
         // Check Drum hit
         checkDrumHit: function(){
-            print("###### Drum hit!!!! ######");
+            // print("###### Drum hit!!!! ######");
             theDrumObjThis.beatAttempted = true;
 
             theDrumObjThis.timeAtStartOfHit = new Date();
@@ -338,10 +369,8 @@
             }, theDrumObjThis.getIntervalFromBpm(theDrumObjThis.bpm) / 4);
         },
         matchBeat: function(){
-            print("++++++++++Match!!!!!++++++++++");
+            // print("++++++++++Match!!!!!++++++++++");
             theDrumObjThis.beatsMatched++;
-
-            // print("MATCH!"+theDrumObjThis.scoreboardMatchResponseList[theDrumObjThis.getRandomInt(0, theDrumObjThis.scoreboardMatchResponseList.length -1)]);
 
             // pulse color to green on match will be moved to missBeat
             Entities.editEntity(theDrumObjThis.entityID, theDrumObjThis.matchColor);
@@ -362,13 +391,11 @@
         },
         missBeat: function(){
 
-            print("-----------miss!!!----------");
+            // print("-----------miss!!!----------");
             theDrumObjThis.beatsMissed++;
 
-            // print("MISS!!"+theDrumObjThis.scoreboardMissResponseList[theDrumObjThis.getRandomInt(0, theDrumObjThis.scoreboardMissResponseList.length -1)]);
-
             // play miss sound!
-            theDrumObjThis.soundInjector = Audio.playSound(theDrumObjThis.beatSound, theDrumObjThis.beatSoundOptions);
+            // theDrumObjThis.soundInjector = Audio.playSound(theDrumObjThis.missSound, theDrumObjThis.missSoundOptions);
 
             // pulse color to orange on miss will be moved to missBeat
             Entities.editEntity(theDrumObjThis.entityID, theDrumObjThis.missColor);
@@ -409,20 +436,24 @@
                 position: Entities.getEntityProperties(theDrumObjThis.entityID).position, // Probably just define this inside of the BeatMatcher prototype
                 volume: 0.3,
                 loop: false,
-                stereo: false
+                stereo: false,
+                localOnly: true
             };
             if (!theDrumObjThis.beatSound.downloaded){ print("*****"+theDrumObjThis.beatURL+" failed to download!******"); }
 
+            // Disabled for latency reasons
             //// Miss
-            theDrumObjThis.missURL = 'http://theblacksun.s3.amazonaws.com/props/beatMatcher/miss_04.wav';
-            theDrumObjThis.missSound = SoundCache.getSound(theDrumObjThis.missURL);
-            theDrumObjThis.missSoundOptions =  {
-                position: Entities.getEntityProperties(theDrumObjThis.entityID).position,
-                volume: 0.3,
-                loop: false,
-                stereo: true
-            };
-            if (!theDrumObjThis.missSound.downloaded){ print("*****"+theDrumObjThis.missURL+" failed to download!******"); }
+            // theDrumObjThis.missURL = 'http://theblacksun.s3.amazonaws.com/props/beatMatcher/miss_04.wav';
+            // theDrumObjThis.missSound = SoundCache.getSound(theDrumObjThis.missURL);
+            // theDrumObjThis.missSoundOptions =  {
+            //     position: Entities.getEntityProperties(theDrumObjThis.entityID).position,
+            //     volume: 0.45,
+            //     loop: false,
+            //     stereo: false,
+            //     localOnly: true
+            //
+            // };
+            // if (!theDrumObjThis.missSound.downloaded){ print("*****"+theDrumObjThis.missURL+" failed to download!******"); }
 
             //// GameOver
             theDrumObjThis.gameOverURL = 'http://theblacksun.s3.amazonaws.com/props/beatMatcher/GameOver.wav';
@@ -431,9 +462,12 @@
                 position: Entities.getEntityProperties(theDrumObjThis.entityID).position,
                 volume: 0.3,
                 loop: false,
-                stereo: true
+                stereo: false,
+                localOnly: true
+
             };
             if (!theDrumObjThis.gameOverSound.downloaded){ print("*****"+theDrumObjThis.gameOverURL+" failed to download!******"); }
+
 
             // make rest of BeatMatcher
             new Scoreboard();
