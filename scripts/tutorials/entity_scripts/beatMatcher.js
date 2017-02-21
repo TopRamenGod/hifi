@@ -175,6 +175,9 @@
 
         hitDrum: function(){
 
+            // Play hit drum sound!
+            // theDrumObjThis.soundInjector = Audio.playSound(theDrumObjThis.drumHitSound, theDrumObjThis.drumHitSoundOptions);
+
             // :::: Start beat ::::
             if(!theDrumObjThis.hasBeatStarted && theDrumObjThis.beatCounter <= 0) {
                 print("!!!!!!!!!!!!!!!!!!!!! DOIN THE THING !!!!!!!!!!!!!!!!!!!!!");
@@ -422,13 +425,26 @@
             theDrumObjThis.beatURL = 'http://theblacksun.s3.amazonaws.com/props/beatMatcher/beat_mono.wav';
             theDrumObjThis.beatSound = SoundCache.getSound(theDrumObjThis.beatURL);
             theDrumObjThis.beatSoundOptions =  {
-                position: Entities.getEntityProperties(theDrumObjThis.entityID).position, // Probably just define this inside of the BeatMatcher prototype
+                position: Entities.getEntityProperties(theDrumObjThis.entityID).position,
                 volume: 0.3,
                 loop: false,
                 stereo: false,
                 localOnly: true
             };
             if (!theDrumObjThis.beatSound.downloaded){ print("*****"+theDrumObjThis.beatURL+" failed to download!******"); }
+
+
+            // //// Drum Hit
+            // theDrumObjThis.drumHitURL = 'http://theblacksun.s3.amazonaws.com/props/beatMatcher/drumhit.wav';
+            // theDrumObjThis.drumHitSound = SoundCache.getSound(theDrumObjThis.drumHitURL);
+            // theDrumObjThis.drumHitSoundOptions =  {
+            //     position: Entities.getEntityProperties(theDrumObjThis.entityID).position,
+            //     volume: 0.3,
+            //     loop: false,
+            //     stereo: false,
+            //     localOnly: true
+            // };
+            // if (!theDrumObjThis.drumHitSound.downloaded){ print("*****"+theDrumObjThis.drumHitURL+" failed to download!******"); }
 
             // Disabled for latency reasons
             //// Miss
@@ -461,8 +477,8 @@
             new Scoreboard();
         },
         unload: function(){
-            clearInterval(this.hitCheckID);
-            clearInterval(this.heartBeatIntervalID);
+            Script.clearInterval(theDrumObjThis.hitCheckID);
+            Script.clearInterval(theDrumObjThis.heartBeatIntervalID);
         }
     };
 
