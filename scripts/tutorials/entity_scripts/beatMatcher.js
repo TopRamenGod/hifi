@@ -59,7 +59,7 @@
         // Mouse Click Operation
         this.clickDownOnEntity = function(entityID, mouseEvent){
             if (Entities.getEntityProperties(theDrumObjThis.entityID).name == 'BeatMatcher_Drum') {
-                this.hitDrum();
+                theDrumObjThis.hitDrum();
                 print("Drum clicked!!!!");
             }
         };
@@ -91,7 +91,7 @@
                 handInRadius = true;
                 print(":::::::::TRIGGER!:::::::::");
 
-                this.hitDrum();
+                theDrumObjThis.hitDrum();
             }
         };
 
@@ -122,7 +122,7 @@
         };
 
         // Throttle hit detection
-        this.hitCheckID = Script.setInterval(function(){ handInRadius = false; }, 250);
+        this.hitCheckID = Script.setInterval(function(){ handInRadius = false; }, 500);
 
         // Timing
         this.bpm = 80;
@@ -177,6 +177,7 @@
 
             // :::: Start beat ::::
             if(!theDrumObjThis.hasBeatStarted && theDrumObjThis.beatCounter <= 0) {
+                print("!!!!!!!!!!!!!!!!!!!!! DOIN THE THING !!!!!!!!!!!!!!!!!!!!!");
 
                 // set timestamp for *first* beat
                 theDrumObjThis.futureBeat = Date.now() + theDrumObjThis.getIntervalFromBpm(theDrumObjThis.bpm);
@@ -223,8 +224,6 @@
                     theDrumObjThis.timeAtStartOfBeat = new Date();
                     // print("time at start of beat: "+theDrumObjThis.timeAtStartOfBeat);
 
-                    // Update audio position with position of entity
-                    theDrumObjThis.beatSoundOptions.position = Entities.getEntityProperties(theDrumObjThis.entityID).position;
 
                     // :::: Stop drum after beatsMissed limit ::::
                     if (theDrumObjThis.beatsMissed >= theDrumObjThis.missLimit) {
@@ -264,6 +263,9 @@
 
                     // Play beat!
                     theDrumObjThis.soundInjector = Audio.playSound(theDrumObjThis.beatSound, theDrumObjThis.beatSoundOptions);
+
+                    // Update audio position with position of entity
+                    theDrumObjThis.beatSoundOptions.position = Entities.getEntityProperties(theDrumObjThis.entityID).position;
 
                     // Count beat
                     theDrumObjThis.beatCounter++;
@@ -457,6 +459,10 @@
 
             // make rest of BeatMatcher
             new Scoreboard();
+        },
+        unload: function(){
+            clearInterval(this.hitCheckID);
+            clearInterval(this.heartBeatIntervalID);
         }
     };
 
