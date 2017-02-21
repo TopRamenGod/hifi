@@ -29,7 +29,6 @@
                 z: 0.1
             },
             text: theDrumObjThis.scoreboardGreeting,
-
             lineHeight: 0.05,
             textColor: {red: 255, green: 255, blue: 255},
             backgroundColor: {red: 0, green: 0, blue: 0},
@@ -102,10 +101,13 @@
         // Helper functions
         this.getIntervalFromBpm = function(bpm){ return 60000 / bpm; };
 
-        this.getAverageFromList = function(list){
-            var sum = list.reduce(function(acc, val) { return acc + val; }, 0);
-            return Math.floor(sum/list.length); // The player probably doesn't care about precision to the millionth of a second
-        };
+        this.getAverageFromList = function(list) {
+            var sum = list.reduce(function (acc, val) {
+                return acc + val;
+            }, 0);
+            return Math.floor(sum / list.length);                     // The player probably doesn't care about precision
+        };                                                            // to the millionth of a second
+
 
         this.getRandomInt = function(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; };
 
@@ -127,6 +129,7 @@
         this.beatCounter = 0;
         this.missLimit = 5;
         this.beatAttempted = false;
+        this.hasBeatStarted = false;
 
         // Matches and Misses
         this.beatsMatched = 0;
@@ -134,8 +137,6 @@
 
         // High Score
         this.highScore = 0;
-
-        this.hasBeatStarted = false;
 
         this.scoreboardRollingGreetingList = [
             "    COME AND BE A \n"+"    BEATMATCH HERO!\n\n",
@@ -145,13 +146,6 @@
         ];
 
         // Scoreboard messages
-        // this.scoreboardCongratsResponseList = [
-        //     'You beat the high score!!!',
-        //     'YOUR NAME SHALL BE SUNG IN THE HALLS OF VALHALLA'];
-        // this.scoreboardTimeoutResponseList = [
-        //     'Time\'s up!',
-        //     '5 missed beats in a row....',
-        //     'That could have gone better...'];
         this.scoreboardMatchResponseList = [
             'Beat matched!',
             'Well done!',
@@ -213,7 +207,6 @@
             // heartBeat interval for checking to see if the right amount of time has passed for a beat to occur
             theDrumObjThis.heartBeatIntervalID = Script.setInterval(function () {
 
-                // if(theDrumObjThis.shouldBeatFire()) {
                 if(Date.now() >= theDrumObjThis.futureBeat) {
 
                     // set timestamp for *next* beat
@@ -327,6 +320,7 @@
             // Reset beat counter
             theDrumObjThis.beatCounter = 0;
 
+            // Reset checks
             theDrumObjThis.hasBeatStarted = false;
             theDrumObjThis.beatAttempted = false;
 
@@ -365,7 +359,7 @@
             // print("++++++++++Match!!!!!++++++++++");
             theDrumObjThis.beatsMatched++;
 
-            // pulse color to green on match will be moved to missBeat
+            // pulse color to green on match
             Entities.editEntity(theDrumObjThis.entityID, theDrumObjThis.matchColor);
 
             // Add 1 to match success list
