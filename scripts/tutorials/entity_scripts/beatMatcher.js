@@ -91,7 +91,7 @@
             if ((rightHandDistanceToDrum <= 0.13 || leftHandDistanceToDrum <= 0.13) && !handInRadius) {
                 handInRadius = true;
                 print(":::::::::TRIGGER!:::::::::");
-                // Drum.prototype.hitDrum();
+
                 this.hitDrum();
             }
         };
@@ -210,10 +210,8 @@
             theDrumObjThis.matchLatencyList = [0,0,0,0,0,0,0,0,0,0];    // Start with 0ms avg
 
             // 60,000 ms / 120 BPM = 500 ms per beat
-            // theDrumObjThis.beatIntervalID = Script.setInterval(function () {
             // heartBeat interval for checking to see if the right amount of time has passed for a beat to occur
             theDrumObjThis.heartBeatIntervalID = Script.setInterval(function () {
-            // fireBeat = function () {
 
                 // if(theDrumObjThis.shouldBeatFire()) {
                 if(Date.now() >= theDrumObjThis.futureBeat) {
@@ -237,7 +235,6 @@
 
                     // :::: Stop drum after beatsMissed limit ::::
                     if (theDrumObjThis.beatsMissed >= theDrumObjThis.missLimit) {
-                        // print("You missed too many beats!!!!!!");
 
                         // Stop beat
                         theDrumObjThis.stopBeat();
@@ -305,9 +302,6 @@
                     theDrumObjThis.beatAttempted = false;
 
                 }
-
-                // }, theDrumObjThis.getIntervalFromBpm(theDrumObjThis.bpm));
-            // }.bind(this, 5));
             }, 5);
         },
         // :::: Stop Beat ::::
@@ -322,7 +316,6 @@
             setScoreboard({text: theDrumObjThis.scoreboardGreeting});
 
             // Reset Intervals
-            // Script.clearInterval(theDrumObjThis.beatIntervalID);
             Script.clearInterval(theDrumObjThis.heartBeatIntervalID);
 
             // Reset Timeout
@@ -467,7 +460,6 @@
 
             };
             if (!theDrumObjThis.gameOverSound.downloaded){ print("*****"+theDrumObjThis.gameOverURL+" failed to download!******"); }
-
 
             // make rest of BeatMatcher
             new Scoreboard();
