@@ -20,8 +20,8 @@ var beatMatcherProperties = {
         y: 0.6,
         z: 0
     }), Vec3.multiply(1, Quat.getFront(Camera.getOrientation()))),
-    name: 'BeatMatcher_Drum',
-    type: 'Sphere',
+    name: "BeatMatcher_Drum",
+    type: "Sphere",
     script: SCRIPT_URL,
     dimensions: {
         x: 0.12,

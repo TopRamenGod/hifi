@@ -8,6 +8,23 @@
 *  created with createBeatMatcher.js
 *
 *
+*  "Hit the Drum to start by either clicking it with your mouse, or hit with your avatar's hands. Hit the drum in time
+*  with the beat to practice your rhythm! How many beats can you stay in time with?
+*
+*  Are you a BeatMatch Hero?"
+*
+*
+*
+*  The general internal flow of this current iteration is to use a Date comparision as points in actual time for our BPM
+*  rhythm (theDrumObjThis.futureBeat), and a rapid 5 ms 'heartbeat' style setInterval timer to frequently check if it is
+*  time for the *next* beat in time to fire (theDrumObjThis.beatIntervalID). This is an attempt to counter the inherent
+*  unreliability of Javascript timers.
+*
+*  For hand controller detection, since there are no default colliders for avatar hands, frequent checks against a distance
+*  threshold serves this purpose (Drum.checkForHandControllerDrumHit) by being registered with the Script.update method.
+*  However, since this method checks TOO frequently (60 Hz) and ends up registering unintentional drum hits, it is
+*  throttled (Drum.hitCheckID).
+*
 *  Distributed under the Apache License, Version 2.0.
 *  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 */
@@ -16,6 +33,10 @@
 
     // Displays accuracy, score, and various messages
     var Scoreboard = function() {
+
+        // For clearer scope
+        theScoreboardObjThis = this;
+
         var scoreboardProperties = {
             position: Vec3.sum(Vec3.sum(MyAvatar.position, {
                 x: 0,
@@ -26,11 +47,11 @@
             name: 'BeatMatcher_Scoreboard',
             parentID: theDrumObjThis.entityID,
             dimensions: {
-                x: 0.6,
+                x: 0.61,
                 y: 0.425,
                 z: 0.1
             },
-            text: theDrumObjThis.scoreboardGreeting,
+            text: "Hit the white sphere to start!",
             lineHeight: 0.05,
             textColor: {red: 255, green: 255, blue: 255},
             backgroundColor: {red: 0, green: 0, blue: 0},
@@ -38,15 +59,343 @@
             lifetime: -1
         }
 
-        var _scoreboard = Entities.addEntity(scoreboardProperties);
+        theScoreboardObjThis._scoreboard = Entities.addEntity(scoreboardProperties);
+
+
+        //// TEMPORARILY DISABLED FOR NEW DISPLAY OBJECT
+        this.scoreboardRollingGreetingList = [
+            "    COME AND BE A \n"+"    BEATMATCH HERO!\n\n",
+            "    TEST YOUR SKILLS!\n\n",
+            "    ARE YOU A BAD \n"+"    ENOUGH DUDE?\n\n",
+            "    WANNA BE AWESOME.... \n"+"    ...ER?\n\n"
+        ]
+
+        // :: Scoreboard messages ::
+        this.scoreboardMatchResponseList = [
+            "Beat matched!",
+            "Well done!",
+            "Awesome!!!",
+            "good",
+            "GREAT!",
+            "Superb!"
+        ];
+        this.scoreboardMissResponseList = [
+            "Beat missed :(",
+            "NOPE",
+            "fail.",
+            "miss.",
+            "MISS",
+            "You can do better...",
+            "try again",
+            "hmm..."
+        ];
+        this.scoreboardStrings = {
+            "BEATMATCHER_NAME": "BeatMatcher 5000",
+            "START_1": "Hit/click the white",
+            "START_2": "sphere to start!",
+            "GAME_OVER": "GAME OVER",
+            "TIME_LATE": " ms late",
+            "HIGH_SCORE": "High Score: ",
+            "NEW_HIGH_SCORE": "New high score!: ",
+            "BEAT_HIGH_SCORE": "You beat the high score!",
+            "AVERAGE_BEATMATCH_LATENCY": "Avg. Match Latency: ",
+            "BEATS_MATCHED": "Beats Matched: ",
+            "BEATS_MISSED": "Beats Missed: ",
+            "BEATS_PLAYED": "Beats Played: ",
+            "LAST_BEAT_MATCH": "Last match: ",
+            "MATCHES": " matches",
+            "MATCHES_EXCL": " Matches!!!",
+            "HEADER_PADDING": "=",
+            "FOOTER_PADDING": "=",
+            "LINE_PADDING": " ",
+
+        };
+
+        // Helps keep your lines the length that fit best given text entity dimensions and lineHeight
+        theScoreboardObjThis.REQUIRED_LINE_LENGTH = 25;
+
+        // // Scoreboard Greeting -- will need to address this in lieu of the new model of display object
+        // this.scoreboardGreeting = "BeatMatcher 5000\n\n"+
+        //     this.scoreboardRollingGreetingList[this.getRandomInt(0, this.scoreboardRollingGreetingList.length -1)]+"\n"+
+        //     "\tHit the white sphere to start!\n";
+
+        // getScoreboardGreeting = function(){
+        //     print("attempting to prepare scoreboard greeting...");
+        //
+        //     newScoreboardGreeting = theDrumObjThis.myScoreboard.getNewScoreboardDisplay;
+        //
+        //     // Build new scoreboard display - Game Welcome/Start Screen
+        //     // newScoreboardGreeting[0] = "BeatMatcher 5000";
+        //     // newScoreboardGreeting[3] = "\tHit the white sphere to start!";
+        //     newScoreboardGreeting['0'] = "BeatMatcher 5000";
+        //     newScoreboardGreeting['3'] = "\tHit the white sphere to start!";
+        //
+        //     return newScoreboardGreeting;
+        // }
+
+        theScoreboardObjThis.scoreboardGreeting = theScoreboardObjThis.getScoreboardGreeting();
 
         setScoreboard = function(newTextProperty) {
-            Entities.editEntity(_scoreboard, newTextProperty);
+            Entities.editEntity(theScoreboardObjThis._scoreboard, newTextProperty);
+            print("function setScoreboard");
+
         }
+
+        // var scoreboardDisplayLines = [
+        //     scoreboardDisplayString.substring(0, 24),
+        //     scoreboardDisplayString.substring(25, 50),
+        //     scoreboardDisplayString.substring(51, 76),
+        //     scoreboardDisplayString.substring(77, 102),
+        //     scoreboardDisplayString.substring(103, 128),
+        //     scoreboardDisplayString.substring(129, 154),
+        //     scoreboardDisplayString.substring(155, 180),
+        //     scoreboardDisplayString.substring(181, 206),
+        //
+        // ]
+
+
+        // Current dimensions {0.6, 0.425, 0.1} and lineHeight(0.05) produces 8 lines, 25 (24 alpha + 1 mandatory space)
+        // characters per line
+        // var scoreboardDisplayString =
+        //     "                         " +
+        //     "                         " +
+        //     "                         " +
+        //     "                         " +
+        //     "                         " +
+        //     "                         " +
+        //     "                         " +
+        //     "                         ";
+
+        // // Scoreboard display object, addressable by line. Max 24 alpha characers + 1 mandatory space per line
+        // var scoreboardDisplay = {
+        //     1: scoreboardDisplayString.substring(0, 24),
+        //     2: scoreboardDisplayString.substring(25, 50),
+        //     3: scoreboardDisplayString.substring(51, 76),
+        //     4: scoreboardDisplayString.substring(77, 102),
+        //     5: scoreboardDisplayString.substring(103, 128),
+        //     6: scoreboardDisplayString.substring(129, 154),
+        //     7: scoreboardDisplayString.substring(155, 180),
+        //     8: scoreboardDisplayString.substring(181, 206),
+        // }
+
+        // setScoreboard = function(newTextProperty) {
+        //     Entities.editEntity(_scoreboard, newTextProperty);
+        // }
+        //
+        //
+        // // get new, blank display lines object
+        // getNewScoreboardDisplay = function() {
+        //
+        //     var scoreboardDisplayString =
+        //         "                         " +
+        //         "                         " +
+        //         "                         " +
+        //         "                         " +
+        //         "                         " +
+        //         "                         " +
+        //         "                         " +
+        //         "                         ";
+        //
+        //     var scoreboardDisplay = {
+        //         1: scoreboardDisplayString.substring(0, 24),
+        //         2: scoreboardDisplayString.substring(25, 50),
+        //         3: scoreboardDisplayString.substring(51, 76),
+        //         4: scoreboardDisplayString.substring(77, 102),
+        //         5: scoreboardDisplayString.substring(103, 128),
+        //         6: scoreboardDisplayString.substring(129, 154),
+        //         7: scoreboardDisplayString.substring(155, 180),
+        //         8: scoreboardDisplayString.substring(181, 206),
+        //     }
+        //
+        //     return scoreboardDisplay;
+        // };
+        //
+        // // Takes in scoreboard display  object
+        // updateScoreboard = function(newScoreboardDisplay){
+        //     var newScoreboardText = "";
+        //
+        //     // Concat display object into string for text entity
+        //     for (line in newScoreboardDisplay){
+        //         newScoreboardText = newScoreboardText + line;
+        //     }
+        //
+        //     // Update scoreboard text entity!
+        //     setScoreboard({
+        //         text: newScoreboardText
+        //     });
+        //
+        // }
+    };
+
+    Scoreboard.prototype = {
+        setScoreboard: function(newTextProperty) {
+            Entities.editEntity(theScoreboardObjThis._scoreboard, newTextProperty);
+            print("prototype setScoreboard");
+        },
+        repeatString: function(str, n){
+            return new Array(n + 1).join(str);
+        },
+        // returns a scoreboard greeting template of a a new scoreboard display object
+        getScoreboardGreeting: function(){
+            print("prototype getScoreboardGreeting");
+
+            newScoreboardGreeting = this.getNewScoreboardDisplay();
+
+            // Build new scoreboard display - Game Welcome/Start Screen
+            newScoreboardGreeting['0'] =
+                "|" + theScoreboardObjThis.repeatString(
+                    theScoreboardObjThis.scoreboardStrings.HEADER_PADDING,
+                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH-2)
+                ) + "|";
+            newScoreboardGreeting['1'] =
+                theScoreboardObjThis.repeatString(
+                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)
+                )+
+                theScoreboardObjThis.scoreboardStrings.BEATMATCHER_NAME +
+                theScoreboardObjThis.repeatString(
+                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)-1
+                );
+            newScoreboardGreeting['2'] =
+                "|" + theScoreboardObjThis.repeatString(
+                    theScoreboardObjThis.scoreboardStrings.FOOTER_PADDING,
+                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH-2)
+                ) + "|";
+            newScoreboardGreeting['4'] =
+                theScoreboardObjThis.repeatString(
+                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)+4
+                )+
+                theScoreboardObjThis.scoreboardStrings.START_1+
+                theScoreboardObjThis.repeatString(
+                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)-1
+                );
+            newScoreboardGreeting['5'] =
+                theScoreboardObjThis.repeatString(
+                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)+2
+                )+
+                theScoreboardObjThis.scoreboardStrings.START_2+
+                theScoreboardObjThis.repeatString(
+                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)-4
+                );
+
+
+            print("new scoreboard greeting:");
+            print(newScoreboardGreeting.join);
+            return newScoreboardGreeting;
+
+        },
+
+        // get new, blank display lines object, so we only need update the lines we care about.
+        getNewScoreboardDisplay: function() {
+
+            print("::::: getting new scoreboard display :::: ");
+            // size of initial empty Scoreboard is irrelevant, since we check for line length in updateScoreboard
+            var emptyScoreboardDisplayString =
+                "                         " +
+                "                         " +
+                "                         " +
+                "                         " +
+                "                         " +
+                "                         " +
+                "                         " +
+                "                         ";
+
+            // TODO: find a programmatic way to define initial line length by text entity dimensions and lineheight
+            var emptyScoreboardDisplay = {
+                '0': emptyScoreboardDisplayString.substring(0, 24),
+                '1': emptyScoreboardDisplayString.substring(25, 50),
+                '2': emptyScoreboardDisplayString.substring(51, 76),
+                '3': emptyScoreboardDisplayString.substring(77, 102),
+                '4': emptyScoreboardDisplayString.substring(103, 128),
+                '5': emptyScoreboardDisplayString.substring(129, 154),
+                '6': emptyScoreboardDisplayString.substring(155, 180),
+                '7': emptyScoreboardDisplayString.substring(181, 206),
+            }
+
+
+            return emptyScoreboardDisplay;
+        },
+
+        // Takes in scoreboard display object and updates scoreboard entity
+        updateScoreboard: function(newScoreboardDisplay){
+
+
+            print("*****incoming scoreboard to update: ");
+            print(newScoreboardDisplay['0']);
+            print(newScoreboardDisplay['1']);
+            print(newScoreboardDisplay['2']);
+            print(newScoreboardDisplay['3']);
+            print(newScoreboardDisplay['4']);
+            print(newScoreboardDisplay['5']);
+            print(newScoreboardDisplay['6']);
+            print(newScoreboardDisplay['7']);
+
+            var newScoreboardText = "";
+            var lineEditLength = 0;
+            var lineEditStartIndex = 0;
+
+            // Concat display object 'lines' into string for text entity.
+            Object.keys(newScoreboardDisplay).forEach(function(line){
+
+                // Pad or truncate to guarantee display 'line' length.
+                if(newScoreboardDisplay[line].length < theScoreboardObjThis.REQUIRED_LINE_LENGTH){      // pad line
+                    print("+++++Padding line!+++++");
+
+                    // get length of padding
+                    lineEditLength = theScoreboardObjThis.REQUIRED_LINE_LENGTH - newScoreboardDisplay[line].length;
+
+                    print("lineEditLength: "+ lineEditLength);
+
+                    // get start point of padding
+                    lineEditStartIndex = Math.abs(
+                        newScoreboardDisplay[line].length - theScoreboardObjThis.REQUIRED_LINE_LENGTH);
+
+                    // add padding to line, with return character
+                    newScoreboardDisplay[line] = newScoreboardDisplay[line] +
+                            theScoreboardObjThis.repeatString(
+                                theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                                lineEditLength
+                            ) + "\n";
+
+                } else if (newScoreboardDisplay[line] > theScoreboardObjThis.REQUIRED_LINE_LENGTH)      // truncate line
+                    print("-----Truncating line!------");
+
+                    // get newly truncated line
+                    newScoreboardDisplay[line] = newScoreboardDisplay[line].substring(
+                        0, theScoreboardObjThis.REQUIRED_LINE_LENGTH) + "\n";
+
+                print("adding line: ");
+                    print("|"+newScoreboardDisplay[line]);
+
+                    // concat each line
+                    newScoreboardText = newScoreboardText + newScoreboardDisplay[line];
+            })
+
+            print("updatingScoreboard: ");
+            print(newScoreboardText);
+
+            // Update scoreboard text entity!
+            this.setScoreboard({
+                text: newScoreboardText
+            });
+
+        },
+        // preload: function(entityID){
+        //
+        //     // set our id so other methods can get it.
+        //     this.entityID = entityID;
+        //
+        // }
     };
 
     Drum = function() {
 
+        // For clearer understanding of scoping
         theDrumObjThis = this;
 
         // :: Drum State Colors ::
@@ -72,14 +421,10 @@
         // ::: Hand Controller Operation :::
         this.checkForHandControllerDrumHit = function(){
 
-            rightHandControllerOrientation = Quat.multiply(MyAvatar.orientation,
-                MyAvatar.getAbsoluteJointRotationInObjectFrame(rightHandControllerJointIndex));
-            rightHandControllerPosition = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation,
+            var rightHandControllerPosition = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation,
                 MyAvatar.getAbsoluteJointTranslationInObjectFrame(rightHandControllerJointIndex)));
 
-            leftHandControllerOrientation = Quat.multiply(MyAvatar.orientation,
-                MyAvatar.getAbsoluteJointRotationInObjectFrame(leftHandControllerJointIndex));
-            lefthandControllerPosition = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation,
+            var lefthandControllerPosition = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation,
                 MyAvatar.getAbsoluteJointTranslationInObjectFrame(leftHandControllerJointIndex)));
 
             // right hand distance to drum
@@ -121,14 +466,14 @@
             }
         };
 
-
         // Throttle hit detection
-        this.hitCheckID = Script.setInterval(function(){ handInRadius = false; }, 500);
+        this.hitCheckID = Script.setInterval(function(){ handInRadius = false; }, this.HIT_DETECTION_THROTTLE_WINDOW);
 
         // Timing
         // e.g.: 60,000 ms / 120 BPM = 500 ms per beat. Inherent latency is much more manageable at lower BPMs.
         this.BPM = 80;
-        this.MISSLIMIT = 5;
+        this.MISS_LIMIT = 5;
+        this.HIT_DETECTION_THROTTLE_WINDOW = 500;
         this.beatCounter = 0;
         this.beatAttempted = false;
         this.hasBeatStarted = false;
@@ -137,39 +482,24 @@
         this.beatsMatched = 0;
         this.beatsMissed = 0;
 
+        // Scoreboard object
+        this.myScoreboard;
+        this.newScoreboardDisplay = {};
+
         // High Score
         this.highScore = 0;
 
-        // :: Scoreboard messages ::
-        this.scoreboardRollingGreetingList = [
-            "    COME AND BE A \n"+"    BEATMATCH HERO!\n\n",
-            "    TEST YOUR SKILLS!\n\n",
-            "    ARE YOU A BAD \n"+"    ENOUGH DUDE?\n\n",
-            "    WANNA BE AWESOME.... \n"+"    ...ER?\n\n"
-        ];
+        this.SCOREBOARD_RESET_DELAY = 6000;
 
-        this.scoreboardMatchResponseList = [
-            'Beat matched!',
-            'Well done!',
-            'Awesome!!!',
-            'good',
-            'GREAT!',
-            'Superb!'];
-        this.scoreboardMissResponseList = [
-            'Beat missed :(',
-            'NOPE',
-            'fail.',
-            'miss.',
-            'MISS',
-            'You can do better...',
-            'try again',
-            'hmm...'
-        ];
-
-        // Scoreboard Greeting
-        this.scoreboardGreeting = "BeatMatcher 5000\n\n"+
-            this.scoreboardRollingGreetingList[this.getRandomInt(0, this.scoreboardRollingGreetingList.length -1)]+"\n"+
-            "\tHit the white sphere to start!\n";
+        // this.SCOREBOARD_GREETING_TEST =
+        //     "123456789012345678901234 "+
+        //     "123456789012345678901234 "+
+        //     "123456789012345678901234 "+
+        //     "123456789012345678901234 "+
+        //     "123456789012345678901234 "+
+        //     "123456789012345678901234 "+
+        //     "123456789012345678901234 "+
+        //     "123456789012345678901234 ";
 
     };
 
@@ -189,13 +519,13 @@
 
             // :::: Check drum hit if already started ::::
             } else if(theDrumObjThis.hasBeatStarted && (theDrumObjThis.beatCounter > 0 &&
-                theDrumObjThis.beatsMissed <= theDrumObjThis.MISSLIMIT)){
+                theDrumObjThis.beatsMissed <= theDrumObjThis.MISS_LIMIT)){
 
                 // :::: Check if Drum hit is beat miss or match ::::
                 this.checkDrumHit();
             }
         },
-        startBeat: function() {
+        startBeat: function() {     // most of the active game logic happens here
 
             // Reset matches and misses
             theDrumObjThis.beatsMatched = 0;
@@ -211,7 +541,7 @@
                     theDrumObjThis.futureBeat = Date.now() + theDrumObjThis.getIntervalFromBpm(theDrumObjThis.BPM);
 
                     // Trailing matched beat latency list
-                    if (theDrumObjThis.matchLatencyList.length > 10) {
+                    if (theDrumObjThis.matchLatencyList.length > 10) {      //  magic 10 into CONST
                         theDrumObjThis.matchLatencyList.shift();
                     }
 
@@ -219,37 +549,157 @@
                     theDrumObjThis.timeAtStartOfBeat = new Date();
 
                     // :::: Stop drum after beatsMissed limit ::::
-                    if (theDrumObjThis.beatsMissed >= theDrumObjThis.MISSLIMIT) {
+                    if (theDrumObjThis.beatsMissed >= theDrumObjThis.MISS_LIMIT) {
 
                         // Stop beat
                         theDrumObjThis.stopBeat();
 
                         // Check beats matched against high score
                         if (theDrumObjThis.checkUpdateHighScore(theDrumObjThis.beatsMatched)) {
-                            // Display beat high score!
-                            setScoreboard({
-                                text: "You beat the high score!:\n" +
-                                theDrumObjThis.highScore + " Beats Matched!!!\n" +
-                                "Average Beat Match Latency:" +  "          " +
-                                theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList) + "ms late" + "\n" +
-                                "          GAME OVER"
-                            });
-                        } else {
-                            // Display high Score
-                            setScoreboard({
-                                text: "          GAME OVER\n" +
-                                "          High score: " + theDrumObjThis.highScore + " Beats Matched!!!" +
-                                "\n" +
-                                "Average Beat Match Latency:" + "          " +
-                                theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList) + "ms late" + "\n"
 
-                            });
+                            // ***** scoreboard update operation:
+                            //     - scoreboardDisplay = getNewScoreboardDisplay // get new, blank display object
+                            //         - build scoreBoardDisplay by line:
+                            //     scoreboardDisplay.1 = //line1 stuff
+                            //     scoreboardDisplay.2 = //line2 stuff....etc
+                            //     - updateScoreboard(scoreboardDisplay) // updates scoreboard!
+                            theDrumObjThis.newScoreboardDisplay = theDrumObjThis.myScoreboard.getNewScoreboardDisplay();
+
+                            // Build new scoreboard display - Game over, beat high score
+                            theDrumObjThis.newScoreboardDisplay[0] =
+                                "|" + theScoreboardObjThis.repeatString(
+                                    theScoreboardObjThis.scoreboardStrings.HEADER_PADDING,
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH-2)
+                                ) + "|";
+                            theDrumObjThis.newScoreboardDisplay[1] =
+                                theScoreboardObjThis.repeatString(
+                                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)+4
+                                ) +
+                                theScoreboardObjThis.scoreboardStrings.NEW_HIGH_SCORE+
+                                theScoreboardObjThis.repeatString(
+                                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)-1
+                                );
+                            theDrumObjThis.newScoreboardDisplay[2] =
+                                theScoreboardObjThis.repeatString(
+                                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)+4
+                                ) +
+                                theDrumObjThis.highScore +
+                                theScoreboardObjThis.scoreboardStrings.MATCHES_EXCL +
+                                theScoreboardObjThis.repeatString(
+                                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)-1
+                                );
+                            theDrumObjThis.newScoreboardDisplay[4] =
+                                theScoreboardObjThis.repeatString(
+                                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)+4
+                                ) +
+                                theScoreboardObjThis.scoreboardStrings.AVERAGE_BEATMATCH_LATENCY +
+                                theScoreboardObjThis.repeatString(
+                                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)-1
+                                );
+                            theDrumObjThis.newScoreboardDisplay[5] =
+                                theScoreboardObjThis.repeatString(
+                                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)+4
+                                ) +
+                                theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList) +
+                                theScoreboardObjThis.scoreboardStrings.TIME_LATE +
+                                theScoreboardObjThis.repeatString(
+                                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)-1
+                                );
+                            theDrumObjThis.newScoreboardDisplay[6] =
+                                theScoreboardObjThis.repeatString(
+                                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)+4
+                                ) +
+                                theScoreboardObjThis.scoreboardStrings.GAME_OVER +
+                                theScoreboardObjThis.repeatString(
+                                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)-1
+                                );
+                            theDrumObjThis.newScoreboardDisplay[7] =
+                                "|" +
+                                theScoreboardObjThis.repeatString(
+                                    theScoreboardObjThis.scoreboardStrings.FOOTER_PADDING,
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH-2)
+                                ) + "|";
+
+                            // Update scoreboard display!
+                            theScoreboardObjThis.updateScoreboard(theDrumObjThis.newScoreboardDisplay);
+
+                        } else {
+
+                            theDrumObjThis.newScoreboardDisplay = theDrumObjThis.myScoreboard.getNewScoreboardDisplay();
+
+                            // Build new scoreboard display - Game over, did not beat high score
+                            theDrumObjThis.newScoreboardDisplay[0] =
+                                "|" + theScoreboardObjThis.repeatString(
+                                    theScoreboardObjThis.scoreboardStrings.HEADER_PADDING,
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH-2)
+                                ) + "|";
+                            theDrumObjThis.newScoreboardDisplay[1] =
+                                theScoreboardObjThis.repeatString(
+                                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)+4
+                                )+
+                                theScoreboardObjThis.scoreboardStrings.GAME_OVER +
+                                theScoreboardObjThis.repeatString(
+                                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)-1
+                                );
+                            theDrumObjThis.newScoreboardDisplay[2] =
+                                theScoreboardObjThis.repeatString(
+                                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)+4
+                                )+
+                                theScoreboardObjThis.scoreboardStrings.HIGH_SCORE + theDrumObjThis.highScore +
+                                theScoreboardObjThis.scoreboardStrings.MATCHES +
+                                theScoreboardObjThis.repeatString(
+                                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)-1
+                                );
+                            theDrumObjThis.newScoreboardDisplay[4] =
+                                theScoreboardObjThis.repeatString(
+                                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)+4
+                                )+
+                                theScoreboardObjThis.scoreboardStrings.AVERAGE_BEATMATCH_LATENCY +
+                                theScoreboardObjThis.repeatString(
+                                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)-1
+                                );
+                            theDrumObjThis.newScoreboardDisplay[5] =
+                                theScoreboardObjThis.repeatString(
+                                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)+4
+                                )+
+                                theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList) +
+                                theScoreboardObjThis.scoreboardStrings.TIME_LATE +
+                                theScoreboardObjThis.repeatString(
+                                    theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)-1
+                                );
+                            theDrumObjThis.newScoreboardDisplay[7] =
+                                "|" + theScoreboardObjThis.repeatString(
+                                    theScoreboardObjThis.scoreboardStrings.FOOTER_PADDING,
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH-2)
+                                ) + "|";
+
+                            // Update scoreboard display!
+                            theScoreboardObjThis.updateScoreboard(theDrumObjThis.newScoreboardDisplay);
                         }
 
                         // Display High score for a few seconds before resetting
                         Script.setTimeout(function () {
-                            setScoreboard({text: theDrumObjThis.scoreboardGreeting});
-                        }, 6000);
+                            theScoreboardObjThis.updateScoreboard(theScoreboardObjThis.getScoreboardGreeting());
+
+                        }, theDrumObjThis.SCOREBOARD_RESET_DELAY);
 
                         return;
                     }
@@ -275,21 +725,28 @@
                     if (!theDrumObjThis.beatAttempted) {
                         theDrumObjThis.beatsMissed++;
 
-                        // Update Scoreboard
-                        setScoreboard({
-                            text: "Beats Played: " + theDrumObjThis.beatCounter + "\n" +
-                            "\n" +
-                            "Beats Matched: " + theDrumObjThis.beatsMatched + "\n" +
-                            "Beats Missed: " + theDrumObjThis.beatsMissed + "\n" +
-                            "\n" +
-                            "Average Beat Match Latency: " +
-                            theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList) + "ms late" + "\n" +
-                            "Last beat match: " + theDrumObjThis.hitTimeAfterBeat + "ms late..."
-                        });
+                        theDrumObjThis.newScoreboardDisplay = theDrumObjThis.myScoreboard.getNewScoreboardDisplay();
+
+                        theDrumObjThis.newScoreboardDisplay[0] =
+                            theScoreboardObjThis.scoreboardStrings.BEATS_PLAYED + theDrumObjThis.beatCounter;
+                        theDrumObjThis.newScoreboardDisplay[2] =
+                            theScoreboardObjThis.scoreboardStrings.BEATS_MATCHED + theDrumObjThis.beatsMatched;
+                        theDrumObjThis.newScoreboardDisplay[3] =
+                            theScoreboardObjThis.scoreboardStrings.BEATS_MISSED + theDrumObjThis.beatsMissed;
+                        theDrumObjThis.newScoreboardDisplay[5] =
+                            theScoreboardObjThis.scoreboardStrings.AVERAGE_BEATMATCH_LATENCY +
+                            theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList) +
+                            theScoreboardObjThis.scoreboardStrings.TIME_LATE;
+                        theDrumObjThis.newScoreboardDisplay[6] =
+                            theScoreboardObjThis.scoreboardStrings.LAST_BEAT_MATCH +
+                            theDrumObjThis.hitTimeAfterBeat +
+                            theScoreboardObjThis.scoreboardStrings.TIME_LATE;
+
+                        // Update scoreboard display!
+                        theScoreboardObjThis.updateScoreboard(theDrumObjThis.newScoreboardDisplay);
                     }
 
                     theDrumObjThis.beatAttempted = false;
-
                 }
             }, 5);
         },
@@ -297,10 +754,11 @@
         stopBeat: function() {
 
             // Play Game Over sound!
-            theDrumObjThis.soundInjector = Audio.playSound(theDrumObjThis.gameOverSound, theDrumObjThis.gameOverSoundOptions);
+            theDrumObjThis.soundInjector = Audio.playSound(
+                theDrumObjThis.gameOverSound, theDrumObjThis.gameOverSoundOptions);
 
-            // Reset Scoreboard
-            setScoreboard({text: theDrumObjThis.scoreboardGreeting});
+            // Reset Scoreboard to greeting
+            theScoreboardObjThis.updateScoreboard(theScoreboardObjThis.getScoreboardGreeting());
 
             // Reset Intervals
             Script.clearInterval(theDrumObjThis.beatIntervalID);
@@ -364,16 +822,41 @@
             // add 1 to match success list
             theDrumObjThis.matchLatencyList.push(theDrumObjThis.hitTimeAfterBeat);
 
-            // display random match scoreboard message
-            setScoreboard({text: "Beats Played: " + theDrumObjThis.beatCounter + "\n" +
-                theDrumObjThis.scoreboardMatchResponseList[theDrumObjThis.getRandomInt(0,
-                    theDrumObjThis.scoreboardMatchResponseList.length -1)] + "\n" +
-                "Beats Matched: " + theDrumObjThis.beatsMatched + "\n" +
-                "Beats Missed: " + theDrumObjThis.beatsMissed + "\n" +
-                "\n" +
-                "Average Beat Match Latency: " +
-                    theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList) + "ms late" + "\n" +
-                "Last beat match: "+theDrumObjThis.hitTimeAfterBeat+"ms late..."});
+            // // display random match scoreboard message
+            // setScoreboard({text: "Beats Played: " + theDrumObjThis.beatCounter + "\n" +
+            //     theScoreboardObjThis.scoreboardMatchResponseList[theDrumObjThis.getRandomInt(0,
+            //         theScoreboardObjThis.scoreboardMatchResponseList.length -1)] + "\n" +
+            //     "Beats Matched: " + theDrumObjThis.beatsMatched + "\n" +
+            //     "Beats Missed: " + theDrumObjThis.beatsMissed + "\n" +
+            //     "\n" +
+            //     "Average Beat Match Latency: " +
+            //         theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList) + "ms late" + "\n" +
+            //     theScoreboardObjThis.scoreboardStrings.LAST_BEAT_MATCH+theDrumObjThis.hitTimeAfterBeat+"ms late..."
+            // });
+
+            theDrumObjThis.newScoreboardDisplay = theDrumObjThis.myScoreboard.getNewScoreboardDisplay();
+
+            // Build new scoreboard display - display random match scoreboard message
+            theDrumObjThis.newScoreboardDisplay[0] =
+                theScoreboardObjThis.scoreboardStrings.BEATS_PLAYED + theDrumObjThis.beatCounter;
+            theDrumObjThis.newScoreboardDisplay[1] =
+                theScoreboardObjThis.scoreboardMatchResponseList[theDrumObjThis.getRandomInt(
+                    0, theScoreboardObjThis.scoreboardMatchResponseList.length -1)];
+            theDrumObjThis.newScoreboardDisplay[2] =
+                theScoreboardObjThis.scoreboardStrings.BEATS_MATCHED + theDrumObjThis.beatsMatched;
+            theDrumObjThis.newScoreboardDisplay[3] =
+                theScoreboardObjThis.scoreboardStrings.BEATS_MISSED + theDrumObjThis.beatsMissed;
+            theDrumObjThis.newScoreboardDisplay[5] =
+                theScoreboardObjThis.scoreboardStrings.AVERAGE_BEATMATCH_LATENCY +
+                theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList) +
+                theScoreboardObjThis.scoreboardStrings.TIME_LATE;
+            theDrumObjThis.newScoreboardDisplay[6] =
+                theScoreboardObjThis.scoreboardStrings.LAST_BEAT_MATCH +
+                theDrumObjThis.hitTimeAfterBeat +
+                theScoreboardObjThis.scoreboardStrings.TIME_LATE;
+
+            // Update scoreboard display!
+            theScoreboardObjThis.updateScoreboard(theDrumObjThis.newScoreboardDisplay);
         },
         missBeat: function(){
 
@@ -382,15 +865,28 @@
             // pulse color to theDrumObjThis.missColor on miss
             Entities.editEntity(theDrumObjThis.entityID, theDrumObjThis.missColor);
 
-            // display random match scoreboard message
-            setScoreboard({text: "Beats Played: "+theDrumObjThis.beatCounter+"\n"+
-                "\n"+
-                "Beats Matched: "+theDrumObjThis.beatsMatched+"\n"+
-                "Beats Missed: "+theDrumObjThis.beatsMissed+"\n"+
-                theDrumObjThis.scoreboardMissResponseList[theDrumObjThis.getRandomInt(0,
-                    theDrumObjThis.scoreboardMissResponseList.length -1)]+"\n"+
-                "Average Beat Match Latency: "+theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList)+"ms late"+"\n"+
-                "Last beat match: "+theDrumObjThis.hitTimeAfterBeat+"ms late..."});
+            theDrumObjThis.newScoreboardDisplay = theDrumObjThis.myScoreboard.getNewScoreboardDisplay();
+
+            // Build new scoreboard display - display random miss scoreboard message
+            theDrumObjThis.newScoreboardDisplay[0] =
+                theScoreboardObjThis.scoreboardStrings.BEATS_PLAYED + theDrumObjThis.beatCounter;
+            theDrumObjThis.newScoreboardDisplay[2] =
+                theScoreboardObjThis.scoreboardStrings.BEATS_MATCHED + theDrumObjThis.beatsMatched;
+            theDrumObjThis.newScoreboardDisplay[3] =
+                theScoreboardObjThis.scoreboardStrings.BEATS_MISSED + theDrumObjThis.beatsMissed;
+            theDrumObjThis.newScoreboardDisplay[4] =
+                theScoreboardObjThis.scoreboardMissResponseList[theDrumObjThis.getRandomInt(
+                    0, theScoreboardObjThis.scoreboardMissResponseList.length - 1)];
+            theDrumObjThis.newScoreboardDisplay[5] =
+                theScoreboardObjThis.scoreboardStrings.AVERAGE_BEATMATCH_LATENCY +
+                theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList) +
+                theScoreboardObjThis.scoreboardStrings.TIME_LATE;
+            theDrumObjThis.newScoreboardDisplay[6] =
+                theScoreboardObjThis.scoreboardStrings.LAST_BEAT_MATCH +
+                theDrumObjThis.hitTimeAfterBeat+theScoreboardObjThis.scoreboardStrings.TIME_LATE;
+
+            // Update scoreboard display!
+            theScoreboardObjThis.updateScoreboard(theDrumObjThis.newScoreboardDisplay);
 
         },
         // Preloads a pile of data for theDrumObjThis scope
@@ -421,7 +917,8 @@
                 stereo: false,
                 localOnly: true
             };
-            if (!theDrumObjThis.beatSound.downloaded){ print("*****"+theDrumObjThis.beatURL+" failed to download!******"); }
+            if (!theDrumObjThis.beatSound.downloaded){
+                print("*****"+theDrumObjThis.beatURL+" failed to download!******"); }
 
             // GameOver
             theDrumObjThis.gameOverURL = 'http://theblacksun.s3.amazonaws.com/props/beatMatcher/GameOver.wav';
@@ -434,10 +931,12 @@
                 localOnly: true
 
             };
-            if (!theDrumObjThis.gameOverSound.downloaded){ print("*****"+theDrumObjThis.gameOverURL+" failed to download!******"); }
+            if (!theDrumObjThis.gameOverSound.downloaded){
+                print("*****"+theDrumObjThis.gameOverURL+" failed to download!******"); }
 
             // make rest of BeatMatcher
-            new Scoreboard();
+            // new Scoreboard();
+            theDrumObjThis.myScoreboard = new Scoreboard();
         },
         // Clear timers on script death
         unload: function(){
