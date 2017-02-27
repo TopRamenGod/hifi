@@ -51,7 +51,7 @@
                 y: 0.425,
                 z: 0.1
             },
-            text: "Hit the white sphere to start!",
+            text: "Hit/click the sphere to start!",
             lineHeight: 0.05,
             textColor: {red: 255, green: 255, blue: 255},
             backgroundColor: {red: 0, green: 0, blue: 0},
@@ -91,7 +91,7 @@
         ];
         this.scoreboardStrings = {
             "BEATMATCHER_NAME": "BeatMatcher 5000",
-            "START_1": "Hit/click the white",
+            "START_1": "Hit/click the",
             "START_2": "sphere to start!",
             "GAME_OVER": "GAME OVER",
             "TIME_LATE": " ms late",
@@ -112,26 +112,9 @@
         };
 
         // Helps keep your lines the length that fit best given text entity dimensions and lineHeight
+        // TODO: find a programmatic way to define initial line length by text entity dimensions and lineHeight
         theScoreboardObjThis.REQUIRED_LINE_LENGTH = 25;
-
-        // // Scoreboard Greeting -- will need to address this in lieu of the new model of display object
-        // this.scoreboardGreeting = "BeatMatcher 5000\n\n"+
-        //     this.scoreboardRollingGreetingList[this.getRandomInt(0, this.scoreboardRollingGreetingList.length -1)]+"\n"+
-        //     "\tHit the white sphere to start!\n";
-
-        // getScoreboardGreeting = function(){
-        //     print("attempting to prepare scoreboard greeting...");
-        //
-        //     newScoreboardGreeting = theDrumObjThis.myScoreboard.getNewScoreboardDisplay;
-        //
-        //     // Build new scoreboard display - Game Welcome/Start Screen
-        //     // newScoreboardGreeting[0] = "BeatMatcher 5000";
-        //     // newScoreboardGreeting[3] = "\tHit the white sphere to start!";
-        //     newScoreboardGreeting['0'] = "BeatMatcher 5000";
-        //     newScoreboardGreeting['3'] = "\tHit the white sphere to start!";
-        //
-        //     return newScoreboardGreeting;
-        // }
+        theScoreboardObjThis.NUM_DISPLAY_LINES = 8;
 
         theScoreboardObjThis.scoreboardGreeting = theScoreboardObjThis.getScoreboardGreeting();
 
@@ -141,90 +124,6 @@
 
         }
 
-        // var scoreboardDisplayLines = [
-        //     scoreboardDisplayString.substring(0, 24),
-        //     scoreboardDisplayString.substring(25, 50),
-        //     scoreboardDisplayString.substring(51, 76),
-        //     scoreboardDisplayString.substring(77, 102),
-        //     scoreboardDisplayString.substring(103, 128),
-        //     scoreboardDisplayString.substring(129, 154),
-        //     scoreboardDisplayString.substring(155, 180),
-        //     scoreboardDisplayString.substring(181, 206),
-        //
-        // ]
-
-
-        // Current dimensions {0.6, 0.425, 0.1} and lineHeight(0.05) produces 8 lines, 25 (24 alpha + 1 mandatory space)
-        // characters per line
-        // var scoreboardDisplayString =
-        //     "                         " +
-        //     "                         " +
-        //     "                         " +
-        //     "                         " +
-        //     "                         " +
-        //     "                         " +
-        //     "                         " +
-        //     "                         ";
-
-        // // Scoreboard display object, addressable by line. Max 24 alpha characers + 1 mandatory space per line
-        // var scoreboardDisplay = {
-        //     1: scoreboardDisplayString.substring(0, 24),
-        //     2: scoreboardDisplayString.substring(25, 50),
-        //     3: scoreboardDisplayString.substring(51, 76),
-        //     4: scoreboardDisplayString.substring(77, 102),
-        //     5: scoreboardDisplayString.substring(103, 128),
-        //     6: scoreboardDisplayString.substring(129, 154),
-        //     7: scoreboardDisplayString.substring(155, 180),
-        //     8: scoreboardDisplayString.substring(181, 206),
-        // }
-
-        // setScoreboard = function(newTextProperty) {
-        //     Entities.editEntity(_scoreboard, newTextProperty);
-        // }
-        //
-        //
-        // // get new, blank display lines object
-        // getNewScoreboardDisplay = function() {
-        //
-        //     var scoreboardDisplayString =
-        //         "                         " +
-        //         "                         " +
-        //         "                         " +
-        //         "                         " +
-        //         "                         " +
-        //         "                         " +
-        //         "                         " +
-        //         "                         ";
-        //
-        //     var scoreboardDisplay = {
-        //         1: scoreboardDisplayString.substring(0, 24),
-        //         2: scoreboardDisplayString.substring(25, 50),
-        //         3: scoreboardDisplayString.substring(51, 76),
-        //         4: scoreboardDisplayString.substring(77, 102),
-        //         5: scoreboardDisplayString.substring(103, 128),
-        //         6: scoreboardDisplayString.substring(129, 154),
-        //         7: scoreboardDisplayString.substring(155, 180),
-        //         8: scoreboardDisplayString.substring(181, 206),
-        //     }
-        //
-        //     return scoreboardDisplay;
-        // };
-        //
-        // // Takes in scoreboard display  object
-        // updateScoreboard = function(newScoreboardDisplay){
-        //     var newScoreboardText = "";
-        //
-        //     // Concat display object into string for text entity
-        //     for (line in newScoreboardDisplay){
-        //         newScoreboardText = newScoreboardText + line;
-        //     }
-        //
-        //     // Update scoreboard text entity!
-        //     setScoreboard({
-        //         text: newScoreboardText
-        //     });
-        //
-        // }
     };
 
     Scoreboard.prototype = {
@@ -265,12 +164,12 @@
             newScoreboardGreeting['4'] =
                 theScoreboardObjThis.repeatString(
                     theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
-                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)+4
+                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/4)+2
                 )+
                 theScoreboardObjThis.scoreboardStrings.START_1+
                 theScoreboardObjThis.repeatString(
                     theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
-                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)-1
+                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/4)
                 );
             newScoreboardGreeting['5'] =
                 theScoreboardObjThis.repeatString(
@@ -283,40 +182,27 @@
                     Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)-4
                 );
 
-
             print("new scoreboard greeting:");
             print(newScoreboardGreeting.join);
             return newScoreboardGreeting;
 
         },
 
-        // get new, blank display lines object, so we only need update the lines we care about.
+        // get new, blank display lines object, addressable by line, so we only need update the lines we care about.
         getNewScoreboardDisplay: function() {
 
             print("::::: getting new scoreboard display :::: ");
-            // size of initial empty Scoreboard is irrelevant, since we check for line length in updateScoreboard
-            var emptyScoreboardDisplayString =
-                "                         " +
-                "                         " +
-                "                         " +
-                "                         " +
-                "                         " +
-                "                         " +
-                "                         " +
-                "                         ";
 
-            // TODO: find a programmatic way to define initial line length by text entity dimensions and lineheight
-            var emptyScoreboardDisplay = {
-                '0': emptyScoreboardDisplayString.substring(0, 24),
-                '1': emptyScoreboardDisplayString.substring(25, 50),
-                '2': emptyScoreboardDisplayString.substring(51, 76),
-                '3': emptyScoreboardDisplayString.substring(77, 102),
-                '4': emptyScoreboardDisplayString.substring(103, 128),
-                '5': emptyScoreboardDisplayString.substring(129, 154),
-                '6': emptyScoreboardDisplayString.substring(155, 180),
-                '7': emptyScoreboardDisplayString.substring(181, 206),
+            var emptyScoreboardDisplay = {};
+
+            // create NUM_DISPLAY_LINES blank lines
+            for(i=0; i < theScoreboardObjThis.NUM_DISPLAY_LINES - 1; i++){
+                emptyScoreboardDisplay[i.toString()] =
+                    theScoreboardObjThis.repeatString(
+                        theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                        Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH)
+                );
             }
-
 
             return emptyScoreboardDisplay;
         },
@@ -385,12 +271,6 @@
             });
 
         },
-        // preload: function(entityID){
-        //
-        //     // set our id so other methods can get it.
-        //     this.entityID = entityID;
-        //
-        // }
     };
 
     Drum = function() {
@@ -491,16 +371,6 @@
 
         this.SCOREBOARD_RESET_DELAY = 6000;
 
-        // this.SCOREBOARD_GREETING_TEST =
-        //     "123456789012345678901234 "+
-        //     "123456789012345678901234 "+
-        //     "123456789012345678901234 "+
-        //     "123456789012345678901234 "+
-        //     "123456789012345678901234 "+
-        //     "123456789012345678901234 "+
-        //     "123456789012345678901234 "+
-        //     "123456789012345678901234 ";
-
     };
 
     Drum.prototype = {
@@ -557,12 +427,13 @@
                         // Check beats matched against high score
                         if (theDrumObjThis.checkUpdateHighScore(theDrumObjThis.beatsMatched)) {
 
-                            // ***** scoreboard update operation:
-                            //     - scoreboardDisplay = getNewScoreboardDisplay // get new, blank display object
-                            //         - build scoreBoardDisplay by line:
-                            //     scoreboardDisplay.1 = //line1 stuff
-                            //     scoreboardDisplay.2 = //line2 stuff....etc
-                            //     - updateScoreboard(scoreboardDisplay) // updates scoreboard!
+                            /* scoreboard update operation:
+                            * - scoreboardDisplay = getNewScoreboardDisplay // get new, blank display object
+                            * - build scoreBoardDisplay by line:
+                            *   scoreboardDisplay[1] = //line1 stuff
+                            *   scoreboardDisplay[2] = //line2 stuff....etc
+                            * - updateScoreboard(scoreboardDisplay) // updates scoreboard!
+                            */
                             theDrumObjThis.newScoreboardDisplay = theDrumObjThis.myScoreboard.getNewScoreboardDisplay();
 
                             // Build new scoreboard display - Game over, beat high score
@@ -574,12 +445,12 @@
                             theDrumObjThis.newScoreboardDisplay[1] =
                                 theScoreboardObjThis.repeatString(
                                     theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
-                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)+4
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/4)+2
                                 ) +
                                 theScoreboardObjThis.scoreboardStrings.NEW_HIGH_SCORE+
                                 theScoreboardObjThis.repeatString(
                                     theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
-                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)-1
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/4)-1
                                 );
                             theDrumObjThis.newScoreboardDisplay[2] =
                                 theScoreboardObjThis.repeatString(
@@ -595,12 +466,12 @@
                             theDrumObjThis.newScoreboardDisplay[4] =
                                 theScoreboardObjThis.repeatString(
                                     theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
-                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)+4
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/8)+4
                                 ) +
                                 theScoreboardObjThis.scoreboardStrings.AVERAGE_BEATMATCH_LATENCY +
                                 theScoreboardObjThis.repeatString(
                                     theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
-                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)-1
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/8)-1
                                 );
                             theDrumObjThis.newScoreboardDisplay[5] =
                                 theScoreboardObjThis.repeatString(
@@ -656,23 +527,23 @@
                             theDrumObjThis.newScoreboardDisplay[2] =
                                 theScoreboardObjThis.repeatString(
                                     theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
-                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)+4
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/6)+2
                                 )+
                                 theScoreboardObjThis.scoreboardStrings.HIGH_SCORE + theDrumObjThis.highScore +
                                 theScoreboardObjThis.scoreboardStrings.MATCHES +
                                 theScoreboardObjThis.repeatString(
                                     theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
-                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)-1
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/6)-1
                                 );
                             theDrumObjThis.newScoreboardDisplay[4] =
                                 theScoreboardObjThis.repeatString(
                                     theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
-                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)+4
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/8)+4
                                 )+
                                 theScoreboardObjThis.scoreboardStrings.AVERAGE_BEATMATCH_LATENCY +
                                 theScoreboardObjThis.repeatString(
                                     theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
-                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/3)-1
+                                    Math.floor(theScoreboardObjThis.REQUIRED_LINE_LENGTH/8)-1
                                 );
                             theDrumObjThis.newScoreboardDisplay[5] =
                                 theScoreboardObjThis.repeatString(
@@ -725,6 +596,7 @@
                     if (!theDrumObjThis.beatAttempted) {
                         theDrumObjThis.beatsMissed++;
 
+                        // Build new scoreboard display - unclicked beat
                         theDrumObjThis.newScoreboardDisplay = theDrumObjThis.myScoreboard.getNewScoreboardDisplay();
 
                         theDrumObjThis.newScoreboardDisplay[0] =
@@ -821,18 +693,6 @@
 
             // add 1 to match success list
             theDrumObjThis.matchLatencyList.push(theDrumObjThis.hitTimeAfterBeat);
-
-            // // display random match scoreboard message
-            // setScoreboard({text: "Beats Played: " + theDrumObjThis.beatCounter + "\n" +
-            //     theScoreboardObjThis.scoreboardMatchResponseList[theDrumObjThis.getRandomInt(0,
-            //         theScoreboardObjThis.scoreboardMatchResponseList.length -1)] + "\n" +
-            //     "Beats Matched: " + theDrumObjThis.beatsMatched + "\n" +
-            //     "Beats Missed: " + theDrumObjThis.beatsMissed + "\n" +
-            //     "\n" +
-            //     "Average Beat Match Latency: " +
-            //         theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList) + "ms late" + "\n" +
-            //     theScoreboardObjThis.scoreboardStrings.LAST_BEAT_MATCH+theDrumObjThis.hitTimeAfterBeat+"ms late..."
-            // });
 
             theDrumObjThis.newScoreboardDisplay = theDrumObjThis.myScoreboard.getNewScoreboardDisplay();
 
@@ -935,7 +795,6 @@
                 print("*****"+theDrumObjThis.gameOverURL+" failed to download!******"); }
 
             // make rest of BeatMatcher
-            // new Scoreboard();
             theDrumObjThis.myScoreboard = new Scoreboard();
         },
         // Clear timers on script death
