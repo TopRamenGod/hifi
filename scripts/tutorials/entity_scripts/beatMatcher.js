@@ -397,18 +397,18 @@
         hitDrum: function(){
 
             // :::: Start beat ::::
-            if(!theDrumObjThis.hasBeatStarted && theDrumObjThis.beatCounter <= 0) {
+            if(!myDrum.hasBeatStarted && myDrum.beatCounter <= 0) {
 
                 // set timestamp for *first* beat
-                theDrumObjThis.futureBeat = Date.now() + theDrumObjThis.getIntervalFromBpm(theDrumObjThis.BPM);
+                myDrum.futureBeat = Date.now() + myDrum.getIntervalFromBpm(myDrum.BPM);
 
-                theDrumObjThis.hasBeatStarted = true;
+                myDrum.hasBeatStarted = true;
                 this.shouldCheckTime = true;
                 this.startBeat();
 
             // :::: Check drum hit if already started ::::
-            } else if(theDrumObjThis.hasBeatStarted && (theDrumObjThis.beatCounter > 0 &&
-                theDrumObjThis.beatsMissed <= theDrumObjThis.MISS_LIMIT)){
+            } else if(myDrum.hasBeatStarted && (myDrum.beatCounter > 0 &&
+                myDrum.beatsMissed <= myDrum.MISS_LIMIT)){
 
                 // :::: Check if Drum hit is beat miss or match ::::
                 this.checkDrumHit();
@@ -417,215 +417,215 @@
         startBeat: function() {     // most of the active game logic happens here
 
             // Reset matches and misses
-            theDrumObjThis.beatsMatched = 0;
-            theDrumObjThis.beatsMissed = 0;
-            theDrumObjThis.matchLatencyList = [0,0,0,0,0,0,0,0,0,0];    // Start with 0ms avg
+            myDrum.beatsMatched = 0;
+            myDrum.beatsMissed = 0;
+            myDrum.matchLatencyList = [0,0,0,0,0,0,0,0,0,0];    // Start with 0ms avg
 
             // heartBeat interval for checking to see if the right amount of time has passed for a beat to occur
-            theDrumObjThis.beatIntervalID = Script.setInterval(function () {
+            myDrum.beatIntervalID = Script.setInterval(function () {
 
-                if(Date.now() >= theDrumObjThis.futureBeat) {
+                if(Date.now() >= myDrum.futureBeat) {
 
                     // set timestamp for *next* beat
-                    theDrumObjThis.futureBeat = Date.now() + theDrumObjThis.getIntervalFromBpm(theDrumObjThis.BPM);
+                    myDrum.futureBeat = Date.now() + myDrum.getIntervalFromBpm(myDrum.BPM);
 
                     // Trailing matched beat latency list
-                    if (theDrumObjThis.matchLatencyList.length > 10) {      //  magic 10 into CONST
-                        theDrumObjThis.matchLatencyList.shift();
+                    if (myDrum.matchLatencyList.length > 10) {      //  magic 10 into CONST
+                        myDrum.matchLatencyList.shift();
                     }
 
                     // Start beat timer
-                    theDrumObjThis.timeAtStartOfBeat = new Date();
+                    myDrum.timeAtStartOfBeat = new Date();
 
                     // :::: Stop drum after beatsMissed limit - GAME OVER ::::
-                    if (theDrumObjThis.beatsMissed >= theDrumObjThis.MISS_LIMIT) {
+                    if (myDrum.beatsMissed >= myDrum.MISS_LIMIT) {
 
                         // Stop beat
-                        theDrumObjThis.stopBeat();
+                        myDrum.stopBeat();
 
                         // Check beats matched against high score
-                        if (theDrumObjThis.checkUpdateHighScore(theDrumObjThis.beatsMatched)) {
+                        if (myDrum.checkUpdateHighScore(myDrum.beatsMatched)) {
 
-                            theDrumObjThis.newScoreboardDisplay = myDrum.myScoreboard.getNewScoreboardDisplay();
+                            myDrum.newScoreboardDisplay = myDrum.myScoreboard.getNewScoreboardDisplay();
 
                             // Build new scoreboard display - Game over, beat high score
-                            theDrumObjThis.newScoreboardDisplay[0] = myDrum.myScoreboard.getScoreboardBorder() + "\n";
+                            myDrum.newScoreboardDisplay[0] = myDrum.myScoreboard.getScoreboardBorder() + "\n";
 
-                            theDrumObjThis.newScoreboardDisplay[1] =
+                            myDrum.newScoreboardDisplay[1] =
                                 myDrum.myScoreboard.justifyLine(
                                     myDrum.myScoreboard.scoreboardStrings.NEW_HIGH_SCORE, 'center');
 
-                            theDrumObjThis.newScoreboardDisplay[2] =
+                            myDrum.newScoreboardDisplay[2] =
                                 myDrum.myScoreboard.justifyLine(
-                                    theDrumObjThis.highScore + myDrum.myScoreboard.scoreboardStrings.MATCHES_EXCL,
+                                    myDrum.highScore + myDrum.myScoreboard.scoreboardStrings.MATCHES_EXCL,
                                     'center'
                                 );
 
-                            theDrumObjThis.newScoreboardDisplay[4] =
+                            myDrum.newScoreboardDisplay[4] =
                                 myDrum.myScoreboard.justifyLine(
                                     myDrum.myScoreboard.scoreboardStrings.AVERAGE_BEATMATCH_LATENCY, 'center'
                                 );
 
-                            theDrumObjThis.newScoreboardDisplay[5] =
+                            myDrum.newScoreboardDisplay[5] =
                                 myDrum.myScoreboard.justifyLine(
-                                    theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList) +
+                                    myDrum.getAverageFromList(myDrum.matchLatencyList) +
                                     myDrum.myScoreboard.scoreboardStrings.TIME_LATE,
                                     'center'
                                 );
 
-                            theDrumObjThis.newScoreboardDisplay[6] =
+                            myDrum.newScoreboardDisplay[6] =
                                 myDrum.myScoreboard.justifyLine(
                                     myDrum.myScoreboard.scoreboardStrings.GAME_OVER,'center');
 
-                            theDrumObjThis.newScoreboardDisplay[7] = myDrum.myScoreboard.getScoreboardBorder();
+                            myDrum.newScoreboardDisplay[7] = myDrum.myScoreboard.getScoreboardBorder();
 
                             // Update scoreboard display!
-                            myDrum.myScoreboard.updateScoreboard(theDrumObjThis.newScoreboardDisplay);
+                            myDrum.myScoreboard.updateScoreboard(myDrum.newScoreboardDisplay);
 
                         } else {
 
-                            theDrumObjThis.newScoreboardDisplay = myDrum.myScoreboard.getNewScoreboardDisplay();
+                            myDrum.newScoreboardDisplay = myDrum.myScoreboard.getNewScoreboardDisplay();
 
                             // Build new scoreboard display - Game over, did not beat high score
-                            theDrumObjThis.newScoreboardDisplay[0] = myDrum.myScoreboard.getScoreboardBorder() + "\n";
+                            myDrum.newScoreboardDisplay[0] = myDrum.myScoreboard.getScoreboardBorder() + "\n";
 
-                            theDrumObjThis.newScoreboardDisplay[1] =
+                            myDrum.newScoreboardDisplay[1] =
                                 myDrum.myScoreboard.justifyLine(
                                     myDrum.myScoreboard.scoreboardStrings.GAME_OVER,
                                     'center'
                                 );
 
-                            theDrumObjThis.newScoreboardDisplay[2] =
+                            myDrum.newScoreboardDisplay[2] =
                                 myDrum.myScoreboard.justifyLine(
                                     myDrum.myScoreboard.scoreboardStrings.HIGH_SCORE +
-                                    theDrumObjThis.highScore +
+                                    myDrum.highScore +
                                     myDrum.myScoreboard.scoreboardStrings.MATCHES,
                                     'center'
                                 );
 
-                            theDrumObjThis.newScoreboardDisplay[4] =
+                            myDrum.newScoreboardDisplay[4] =
                                 myDrum.myScoreboard.justifyLine(
                                     myDrum.myScoreboard.scoreboardStrings.AVERAGE_BEATMATCH_LATENCY,
                                     'center'
                                 );
 
-                            theDrumObjThis.newScoreboardDisplay[5] =
+                            myDrum.newScoreboardDisplay[5] =
                                 myDrum.myScoreboard.justifyLine(
-                                    theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList) +
+                                    myDrum.getAverageFromList(myDrum.matchLatencyList) +
                                     myDrum.myScoreboard.scoreboardStrings.TIME_LATE,
                                     'center'
                                 );
 
-                            theDrumObjThis.newScoreboardDisplay[7] = myDrum.myScoreboard.getScoreboardBorder();
+                            myDrum.newScoreboardDisplay[7] = myDrum.myScoreboard.getScoreboardBorder();
 
                             // Update scoreboard display!
-                            myDrum.myScoreboard.updateScoreboard(theDrumObjThis.newScoreboardDisplay);
+                            myDrum.myScoreboard.updateScoreboard(myDrum.newScoreboardDisplay);
                         }
 
                         // Display High Score for a few seconds before resetting
                         Script.setTimeout(function () {
                             myDrum.myScoreboard.updateScoreboard(myDrum.myScoreboard.getScoreboardGreeting());
-                        }, theDrumObjThis.SCOREBOARD_RESET_DELAY);
+                        }, myDrum.SCOREBOARD_RESET_DELAY);
 
                         return;
                     }
 
                     // Play beat!
-                    theDrumObjThis.soundInjector = Audio.playSound(theDrumObjThis.beatSound, theDrumObjThis.beatSoundOptions);
+                    myDrum.soundInjector = Audio.playSound(myDrum.beatSound, myDrum.beatSoundOptions);
 
                     // Update audio position with position of entity
-                    theDrumObjThis.beatSoundOptions.position = Entities.getEntityProperties(theDrumObjThis.entityID).position;
+                    myDrum.beatSoundOptions.position = Entities.getEntityProperties(myDrum.entityID).position;
 
                     // Count beat
-                    theDrumObjThis.beatCounter++;
+                    myDrum.beatCounter++;
 
                     // pulse color to red on beat
-                    Entities.editEntity(theDrumObjThis.entityID, theDrumObjThis.beatColor);
+                    Entities.editEntity(myDrum.entityID, myDrum.beatColor);
 
                     // Reset to starting color after beat
-                    theDrumObjThis.colorResetTimeoutID = Script.setTimeout(function () {
-                        Entities.editEntity(theDrumObjThis.entityID, theDrumObjThis.startingColor);
-                    }, theDrumObjThis.getIntervalFromBpm(theDrumObjThis.BPM) / 4);
+                    myDrum.colorResetTimeoutID = Script.setTimeout(function () {
+                        Entities.editEntity(myDrum.entityID, myDrum.startingColor);
+                    }, myDrum.getIntervalFromBpm(myDrum.BPM) / 4);
 
                     // Check if beat was attempted, as ****UNCLICKED BEATS COUNT AS MISSES****
-                    if (!theDrumObjThis.beatAttempted) {
-                        theDrumObjThis.beatsMissed++;
+                    if (!myDrum.beatAttempted) {
+                        myDrum.beatsMissed++;
 
                         // Build new scoreboard display - unclicked beat
-                        theDrumObjThis.newScoreboardDisplay = myDrum.myScoreboard.getNewScoreboardDisplay();
+                        myDrum.newScoreboardDisplay = myDrum.myScoreboard.getNewScoreboardDisplay();
 
-                        theDrumObjThis.newScoreboardDisplay[0] =
+                        myDrum.newScoreboardDisplay[0] =
                             myDrum.myScoreboard.justifyLine(
-                                myDrum.myScoreboard.scoreboardStrings.BEATS_PLAYED + theDrumObjThis.beatCounter,
+                                myDrum.myScoreboard.scoreboardStrings.BEATS_PLAYED + myDrum.beatCounter,
                                 'center'
                             );
 
-                        theDrumObjThis.newScoreboardDisplay[2] =
+                        myDrum.newScoreboardDisplay[2] =
                             myDrum.myScoreboard.justifyLine(
-                                myDrum.myScoreboard.scoreboardStrings.BEATS_MATCHED + theDrumObjThis.beatsMatched,
+                                myDrum.myScoreboard.scoreboardStrings.BEATS_MATCHED + myDrum.beatsMatched,
                                 'center'
                             );
 
-                        theDrumObjThis.newScoreboardDisplay[3] =
+                        myDrum.newScoreboardDisplay[3] =
                             myDrum.myScoreboard.justifyLine(
-                                myDrum.myScoreboard.scoreboardStrings.BEATS_MISSED + theDrumObjThis.beatsMissed,
+                                myDrum.myScoreboard.scoreboardStrings.BEATS_MISSED + myDrum.beatsMissed,
                                 'center'
                             );
 
-                        theDrumObjThis.newScoreboardDisplay[5] =
+                        myDrum.newScoreboardDisplay[5] =
                             myDrum.myScoreboard.justifyLine(
                                 myDrum.myScoreboard.scoreboardStrings.AVERAGE_BEATMATCH_LATENCY,
                                 'center'
                             );
 
-                        theDrumObjThis.newScoreboardDisplay[6] =
+                        myDrum.newScoreboardDisplay[6] =
                             myDrum.myScoreboard.justifyLine(
-                                theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList) +
+                                myDrum.getAverageFromList(myDrum.matchLatencyList) +
                                 myDrum.myScoreboard.scoreboardStrings.TIME_LATE,
                                 'center'
                             );
 
-                        theDrumObjThis.newScoreboardDisplay[7] =
+                        myDrum.newScoreboardDisplay[7] =
                             myDrum.myScoreboard.justifyLine(
                                 myDrum.myScoreboard.scoreboardStrings.LAST_BEAT_MATCH +
-                                theDrumObjThis.hitTimeAfterBeat +
+                                myDrum.hitTimeAfterBeat +
                                 myDrum.myScoreboard.scoreboardStrings.TIME_LATE,
                                 'center'
                             );
 
                         // Update scoreboard display!
-                        myDrum.myScoreboard.updateScoreboard(theDrumObjThis.newScoreboardDisplay);
+                        myDrum.myScoreboard.updateScoreboard(myDrum.newScoreboardDisplay);
                     }
 
-                    theDrumObjThis.beatAttempted = false;
+                    myDrum.beatAttempted = false;
                 }
-            }, theDrumObjThis.BPM_CHECK_HEARTBEAT_INTERVAL);
+            }, myDrum.BPM_CHECK_HEARTBEAT_INTERVAL);
         },
         // :::: Stop Beat ::::
         stopBeat: function() {
 
             // Play Game Over sound!
-            theDrumObjThis.soundInjector = Audio.playSound(
-                theDrumObjThis.gameOverSound, theDrumObjThis.gameOverSoundOptions);
+            myDrum.soundInjector = Audio.playSound(
+                myDrum.gameOverSound, myDrum.gameOverSoundOptions);
 
             // Reset Scoreboard to greeting
             myDrum.myScoreboard.updateScoreboard(myDrum.myScoreboard.getScoreboardGreeting());
 
             // Reset Intervals
-            Script.clearInterval(theDrumObjThis.beatIntervalID);
+            Script.clearInterval(myDrum.beatIntervalID);
 
             // Reset Timeout
-            Script.clearTimeout(theDrumObjThis.colorResetTimeoutID);
+            Script.clearTimeout(myDrum.colorResetTimeoutID);
 
             // Reset color to starting color
-            Entities.editEntity(theDrumObjThis.entityID, theDrumObjThis.startingColor);
+            Entities.editEntity(myDrum.entityID, myDrum.startingColor);
 
             // Reset beat counter
-            theDrumObjThis.beatCounter = 0;
+            myDrum.beatCounter = 0;
 
             // Reset checks
-            theDrumObjThis.hasBeatStarted = false;
-            theDrumObjThis.beatAttempted = false;
+            myDrum.hasBeatStarted = false;
+            myDrum.beatAttempted = false;
 
             // turn off heartbeat
             this.shouldCheckTime = false;
@@ -634,146 +634,146 @@
         // Check Drum hit
         checkDrumHit: function(){
 
-            theDrumObjThis.beatAttempted = true;
-            theDrumObjThis.timeAtStartOfHit = new Date();
+            myDrum.beatAttempted = true;
+            myDrum.timeAtStartOfHit = new Date();
 
             // Get time difference from start of beat to drum hit
-            theDrumObjThis.hitTimeAfterBeat = theDrumObjThis.timeAtStartOfHit - theDrumObjThis.timeAtStartOfBeat;
+            myDrum.hitTimeAfterBeat = myDrum.timeAtStartOfHit - myDrum.timeAtStartOfBeat;
 
             // hit within after beat range
-            if(theDrumObjThis.hitTimeAfterBeat <=
-                (theDrumObjThis.getIntervalFromBpm(theDrumObjThis.BPM) -
-                (theDrumObjThis.getIntervalFromBpm(theDrumObjThis.BPM)/4) )){
+            if(myDrum.hitTimeAfterBeat <=
+                (myDrum.getIntervalFromBpm(myDrum.BPM) -
+                (myDrum.getIntervalFromBpm(myDrum.BPM)/4) )){
 
                 // beat was a match
                 this.matchBeat();
             }
 
             // hit within miss range
-            if(theDrumObjThis.hitTimeAfterBeat >
-                (theDrumObjThis.getIntervalFromBpm(theDrumObjThis.BPM) -
-                (theDrumObjThis.getIntervalFromBpm(theDrumObjThis.BPM)/4) )) {
+            if(myDrum.hitTimeAfterBeat >
+                (myDrum.getIntervalFromBpm(myDrum.BPM) -
+                (myDrum.getIntervalFromBpm(myDrum.BPM)/4) )) {
 
                 // beat was a miss
                 this.missBeat();
             }
 
             // Reset to starting color after hit
-            theDrumObjThis.colorResetTimeoutID = Script.setTimeout(function () {
-                Entities.editEntity(theDrumObjThis.entityID, theDrumObjThis.startingColor);
-            }, theDrumObjThis.getIntervalFromBpm(theDrumObjThis.BPM) / 4);
+            myDrum.colorResetTimeoutID = Script.setTimeout(function () {
+                Entities.editEntity(myDrum.entityID, myDrum.startingColor);
+            }, myDrum.getIntervalFromBpm(myDrum.BPM) / 4);
         },
         matchBeat: function(){
 
-            theDrumObjThis.beatsMatched++;
+            myDrum.beatsMatched++;
 
             // pulse color to theDrumObjthis.match Green on match
-            Entities.editEntity(theDrumObjThis.entityID, theDrumObjThis.matchColor);
+            Entities.editEntity(myDrum.entityID, myDrum.matchColor);
 
             // add 1 to match success list
-            theDrumObjThis.matchLatencyList.push(theDrumObjThis.hitTimeAfterBeat);
+            myDrum.matchLatencyList.push(myDrum.hitTimeAfterBeat);
 
-            theDrumObjThis.newScoreboardDisplay = myDrum.myScoreboard.getNewScoreboardDisplay();
+            myDrum.newScoreboardDisplay = myDrum.myScoreboard.getNewScoreboardDisplay();
 
             // Build new scoreboard display - display random match scoreboard message
-            theDrumObjThis.newScoreboardDisplay[0] =
+            myDrum.newScoreboardDisplay[0] =
                 myDrum.myScoreboard.justifyLine(
-                    myDrum.myScoreboard.scoreboardStrings.BEATS_PLAYED + theDrumObjThis.beatCounter,
+                    myDrum.myScoreboard.scoreboardStrings.BEATS_PLAYED + myDrum.beatCounter,
                     'center'
                 );
 
-            theDrumObjThis.newScoreboardDisplay[1] =
+            myDrum.newScoreboardDisplay[1] =
                 myDrum.myScoreboard.justifyLine(
                     myDrum.myScoreboard.scoreboardMatchResponseList[
-                        theDrumObjThis.getRandomInt(0, myDrum.myScoreboard.scoreboardMatchResponseList.length -1)],
+                        myDrum.getRandomInt(0, myDrum.myScoreboard.scoreboardMatchResponseList.length -1)],
                     'center'
                 );
 
-            theDrumObjThis.newScoreboardDisplay[2] =
+            myDrum.newScoreboardDisplay[2] =
                 myDrum.myScoreboard.justifyLine(
-                    myDrum.myScoreboard.scoreboardStrings.BEATS_MATCHED + theDrumObjThis.beatsMatched, 'center'
+                    myDrum.myScoreboard.scoreboardStrings.BEATS_MATCHED + myDrum.beatsMatched, 'center'
                 );
 
-            theDrumObjThis.newScoreboardDisplay[3] =
+            myDrum.newScoreboardDisplay[3] =
                 myDrum.myScoreboard.justifyLine(
-                    myDrum.myScoreboard.scoreboardStrings.BEATS_MISSED + theDrumObjThis.beatsMissed, ' center'
+                    myDrum.myScoreboard.scoreboardStrings.BEATS_MISSED + myDrum.beatsMissed, ' center'
                 );
 
-            theDrumObjThis.newScoreboardDisplay[5] =
+            myDrum.newScoreboardDisplay[5] =
                 myDrum.myScoreboard.justifyLine(
                     myDrum.myScoreboard.scoreboardStrings.AVERAGE_BEATMATCH_LATENCY,
                     'center'
                 );
 
-            theDrumObjThis.newScoreboardDisplay[6] =
+            myDrum.newScoreboardDisplay[6] =
                 myDrum.myScoreboard.justifyLine(
-                    theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList) +
+                    myDrum.getAverageFromList(myDrum.matchLatencyList) +
                     myDrum.myScoreboard.scoreboardStrings.TIME_LATE,
                     'center'
                 );
-            theDrumObjThis.newScoreboardDisplay[7] =
+            myDrum.newScoreboardDisplay[7] =
                 myDrum.myScoreboard.justifyLine(
                     myDrum.myScoreboard.scoreboardStrings.LAST_BEAT_MATCH +
-                    theDrumObjThis.hitTimeAfterBeat +
+                    myDrum.hitTimeAfterBeat +
                     myDrum.myScoreboard.scoreboardStrings.TIME_LATE,
                     'center'
                 );
 
             // Update scoreboard display!
-            myDrum.myScoreboard.updateScoreboard(theDrumObjThis.newScoreboardDisplay);
+            myDrum.myScoreboard.updateScoreboard(myDrum.newScoreboardDisplay);
         },
         missBeat: function(){
 
-            theDrumObjThis.beatsMissed++;
+            myDrum.beatsMissed++;
 
-            // pulse color to theDrumObjThis.missColor on miss
-            Entities.editEntity(theDrumObjThis.entityID, theDrumObjThis.missColor);
+            // pulse color to myDrum.missColor on miss
+            Entities.editEntity(myDrum.entityID, myDrum.missColor);
 
-            theDrumObjThis.newScoreboardDisplay = myDrum.myScoreboard.getNewScoreboardDisplay();
+            myDrum.newScoreboardDisplay = myDrum.myScoreboard.getNewScoreboardDisplay();
 
             // Build new scoreboard display - display random miss scoreboard message
-            theDrumObjThis.newScoreboardDisplay[0] =
+            myDrum.newScoreboardDisplay[0] =
                 myDrum.myScoreboard.justifyLine(
-                    myDrum.myScoreboard.scoreboardStrings.BEATS_PLAYED + theDrumObjThis.beatCounter, 'center');
+                    myDrum.myScoreboard.scoreboardStrings.BEATS_PLAYED + myDrum.beatCounter, 'center');
 
-            theDrumObjThis.newScoreboardDisplay[2] =
+            myDrum.newScoreboardDisplay[2] =
                 myDrum.myScoreboard.justifyLine(
-                    myDrum.myScoreboard.scoreboardStrings.BEATS_MATCHED + theDrumObjThis.beatsMatched, 'center');
+                    myDrum.myScoreboard.scoreboardStrings.BEATS_MATCHED + myDrum.beatsMatched, 'center');
 
-            theDrumObjThis.newScoreboardDisplay[3] =
+            myDrum.newScoreboardDisplay[3] =
                 myDrum.myScoreboard.justifyLine(
-                    myDrum.myScoreboard.scoreboardStrings.BEATS_MISSED + theDrumObjThis.beatsMissed, 'center');
+                    myDrum.myScoreboard.scoreboardStrings.BEATS_MISSED + myDrum.beatsMissed, 'center');
 
-            theDrumObjThis.newScoreboardDisplay[4] =
+            myDrum.newScoreboardDisplay[4] =
                 myDrum.myScoreboard.justifyLine(
                     myDrum.myScoreboard.scoreboardMissResponseList[
-                        theDrumObjThis.getRandomInt(0, myDrum.myScoreboard.scoreboardMissResponseList.length - 1)],
+                        myDrum.getRandomInt(0, myDrum.myScoreboard.scoreboardMissResponseList.length - 1)],
                     'center'
                 );
 
-            theDrumObjThis.newScoreboardDisplay[5] =
+            myDrum.newScoreboardDisplay[5] =
                 myDrum.myScoreboard.justifyLine(
                     myDrum.myScoreboard.scoreboardStrings.AVERAGE_BEATMATCH_LATENCY, 'center'
                 );
 
-            theDrumObjThis.newScoreboardDisplay[6] =
+            myDrum.newScoreboardDisplay[6] =
                 myDrum.myScoreboard.justifyLine(
-                    theDrumObjThis.getAverageFromList(theDrumObjThis.matchLatencyList) +
+                    myDrum.getAverageFromList(myDrum.matchLatencyList) +
                     myDrum.myScoreboard.scoreboardStrings.TIME_LATE, 'center'
                 );
 
-            theDrumObjThis.newScoreboardDisplay[7] =
+            myDrum.newScoreboardDisplay[7] =
                 myDrum.myScoreboard.justifyLine(
                     myDrum.myScoreboard.scoreboardStrings.LAST_BEAT_MATCH +
-                    theDrumObjThis.hitTimeAfterBeat+
+                    myDrum.hitTimeAfterBeat+
                     myDrum.myScoreboard.scoreboardStrings.TIME_LATE, 'center'
                 );
 
             // Update scoreboard display!
-            myDrum.myScoreboard.updateScoreboard(theDrumObjThis.newScoreboardDisplay);
+            myDrum.myScoreboard.updateScoreboard(myDrum.newScoreboardDisplay);
 
         },
-        // Preloads a pile of data for theDrumObjThis scope
+        // Preloads a pile of data for myDrum scope
         preload: function(entityID) {
 
             // set our id so other methods can get it.
@@ -792,39 +792,39 @@
 
             // :: Sounds ::
             // Beat
-            theDrumObjThis.beatURL = 'http://theblacksun.s3.amazonaws.com/props/beatMatcher/beat_mono.wav';
-            theDrumObjThis.beatSound = SoundCache.getSound(theDrumObjThis.beatURL);
-            theDrumObjThis.beatSoundOptions =  {
-                position: Entities.getEntityProperties(theDrumObjThis.entityID).position,
+            myDrum.beatURL = 'http://theblacksun.s3.amazonaws.com/props/beatMatcher/beat_mono.wav';
+            myDrum.beatSound = SoundCache.getSound(myDrum.beatURL);
+            myDrum.beatSoundOptions =  {
+                position: Entities.getEntityProperties(myDrum.entityID).position,
                 volume: 0.3,
                 loop: false,
                 stereo: false,
                 localOnly: true
             };
-            if (!theDrumObjThis.beatSound.downloaded){
-                print("*****"+theDrumObjThis.beatURL+" failed to download!******"); }
+            if (!myDrum.beatSound.downloaded){
+                print("*****"+myDrum.beatURL+" failed to download!******"); }
 
             // GameOver
-            theDrumObjThis.gameOverURL = 'http://theblacksun.s3.amazonaws.com/props/beatMatcher/GameOver.wav';
-            theDrumObjThis.gameOverSound = SoundCache.getSound(theDrumObjThis.gameOverURL);
-            theDrumObjThis.gameOverSoundOptions =  {
-                position: Entities.getEntityProperties(theDrumObjThis.entityID).position,
+            myDrum.gameOverURL = 'http://theblacksun.s3.amazonaws.com/props/beatMatcher/GameOver.wav';
+            myDrum.gameOverSound = SoundCache.getSound(myDrum.gameOverURL);
+            myDrum.gameOverSoundOptions =  {
+                position: Entities.getEntityProperties(myDrum.entityID).position,
                 volume: 0.3,
                 loop: false,
                 stereo: false,
                 localOnly: true
 
             };
-            if (!theDrumObjThis.gameOverSound.downloaded){
-                print("*****"+theDrumObjThis.gameOverURL+" failed to download!******"); }
+            if (!myDrum.gameOverSound.downloaded){
+                print("*****"+myDrum.gameOverURL+" failed to download!******"); }
 
             // make rest of BeatMatcher
             myDrum.myScoreboard = new Scoreboard();
         },
         // Clear timers on script death
         unload: function(){
-            Script.clearInterval(theDrumObjThis.hitCheckID);
-            Script.clearInterval(theDrumObjThis.beatIntervalID);
+            Script.clearInterval(myDrum.hitCheckID);
+            Script.clearInterval(myDrum.beatIntervalID);
         }
     };
 
