@@ -77,11 +77,16 @@
             lifetime: -1
         }
 
-        setScoreboard = function(newTextProperty) {
-            Entities.editEntity(theScoreboardObjThis._scoreboard, newTextProperty);
-        }
-
         theScoreboardObjThis._scoreboard = Entities.addEntity(scoreboardProperties);
+
+        // :: Scoreboard State Text Colors ::
+        theScoreboardObjThis.DEFAULT_TEXT_COLOR = {red: 255, green: 255, blue: 255};            // White
+        theScoreboardObjThis.UNCLICKED_BEAT_TEXT_COLOR = {red: 0, green: 0, blue: 255};         // Blue
+        theScoreboardObjThis.MATCHED_BEAT_TEXT_COLOR = {red: 212, green: 250, blue: 205};       // Light Green
+        theScoreboardObjThis.MISSED_BEAT_TEXT_COLOR = {red: 232, green: 190, blue: 160};        // Light Orange
+        theScoreboardObjThis.GREETING_TEXT_COLOR = {red: 0, green: 255, blue: 0};               // Green
+        theScoreboardObjThis.BEAT_HIGH_SCORE_TEXT_COLOR = {red: 255, green: 128, blue: 0};      // Dark Orange
+        theScoreboardObjThis.SHOW_HIGH_SCORE_TEXT_COLOR = {red: 200, green: 128, blue: 100};    // Muted Dark Orange?
 
         // :: Scoreboard messages ::
         theScoreboardObjThis.scoreboardMatchResponseList = [
@@ -108,10 +113,10 @@
             "START_2": "sphere to start!",
             "GAME_OVER": "GAME OVER",
             "TIME_LATE": " ms late",
+            "TIME_SCALE": "ms",
             "HIGH_SCORE": "High Score: ",
             "NEW_HIGH_SCORE": "New high score!: ",
             "BEAT_HIGH_SCORE": "You beat the high score!",
-            "AVERAGE_BEATMATCH_LATENCY": "Avg. Match Latency: ",
             "BEATS_MATCHED": "Beats Matched: ",
             "BEATS_MISSED": "Beats Missed: ",
             "BEATS_PLAYED": "Beats Played: ",
@@ -123,6 +128,9 @@
             "BORDER_ENDS": "|",
             "LINE_PADDING": " ",
             // "LINE_PADDING": "+",        // test character for alignment. Semi-reliable.
+            "LAST_BEAT_ERROR": "Last hit offset: ",
+            "AVERAGE_ERROR": "Avg. offset: ",
+            "YEAR_LINE": "(2017 High Fidelity)",
         };
 
         // Scoreboard Display Object Dimensions
@@ -136,9 +144,10 @@
     };
 
     Scoreboard.prototype = {
-        setScoreboard: function(newTextProperty) {
-            Entities.editEntity(theScoreboardObjThis._scoreboard, newTextProperty);
+        setScoreboard: function(newTextProperty, newTextColorProperty) {
+            Entities.editEntity(theScoreboardObjThis._scoreboard, newTextProperty, newTextColorProperty);
         },
+
         // returns a pre-formatted scoreboard title and screen border line
         getScoreboardBorder: function(){
             return theScoreboardObjThis.scoreboardStrings.BORDER_ENDS +
@@ -148,7 +157,7 @@
                 ) +
                 theScoreboardObjThis.scoreboardStrings.BORDER_ENDS
         },
-        
+
         // returns a scoreboard greeting template of a new scoreboard display object
         getScoreboardGreeting: function(){
 
@@ -168,6 +177,10 @@
 
             newScoreboardGreeting["5"] =
                 theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.START_2, "right");
+
+            newScoreboardGreeting["7"] =
+                theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.YEAR_LINE, "right");
+
 
             return newScoreboardGreeting;
 
@@ -190,7 +203,12 @@
         },
 
         // Takes in scoreboard display object and updates scoreboard entity
-        updateScoreboard: function(newScoreboardDisplay){
+        updateScoreboard: function(newScoreboardDisplay, newScoreboardTextColor){
+
+            // Default color parameter
+            if(!newScoreboardTextColor){
+                var newScoreboardTextColor = theScoreboardObjThis.DEFAULT_TEXT_COLOR;
+            }
 
             var newScoreboardText = "";
 
@@ -202,15 +220,18 @@
             });
 
             // Update scoreboard text entity!
-            this.setScoreboard({
-                text: newScoreboardText
-            });
+            this.setScoreboard(
+                {text: newScoreboardText,
+                textColor: newScoreboardTextColor}
+            );
 
         },
+
         // returns a string that has been repeated n times
         repeatString: function(str, n){
             return new Array(n + 1).join(str);
         },
+
         // Justify the contents of a line relative to REQUIRED_LINE_LENGTH. Align left, center or right.
         justifyLine: function(line, justification){
 
@@ -280,6 +301,7 @@
 
             return line;
         },
+
         deleteScoreboard: function() {
             Entities.deleteEntity(theScoreboardObjThis._scoreboard);
         },
@@ -291,12 +313,9 @@
         theDrumObjThis = this;
 
         // :: Drum State Colors ::
-        this.beatColor = {color: {red: 0, green: 0, blue: 255}};      // Blue
+        this.UNCLICKED_BEAT_TEXT_COLOR = {color: {red: 0, green: 0, blue: 255}};      // Blue
         this.matchColor = {color: {red: 0, green: 255, blue: 0}};     // Green
         this.missColor = {color: {red: 255, green: 128, blue: 0}};    // Dark Orange
-
-        // Match success list - last 10 hits
-        this.matchLatencyList = [];
 
         // ::: Mouse Click Operation :::
         this.clickDownOnEntity = function(entityID, mouseEvent){
@@ -365,6 +384,9 @@
         this.beatAttempted = false;
         this.hasBeatStarted = false;
 
+        // Error in beat timing
+        this.averageError = 0;
+
         // Matches and Misses
         this.beatsMatched = 0;
         this.beatsMissed = 0;
@@ -384,7 +406,7 @@
 
         hitDrum: function(){
 
-            print("XXXX HIT DRUM XXXX");
+            // print("XXXX HIT DRUM XXXX");
 
             // :::: Start beat ::::
             if(!myDrum.hasBeatStarted && myDrum.beatCounter <= 0) {
@@ -405,12 +427,11 @@
         },
         startBeat: function() {     // most of the active game logic happens here
 
-            print("++++STARTING BEAT++++");
+            // print("++++STARTING BEAT++++");
 
             // Reset matches and misses
             myDrum.beatsMatched = 0;
             myDrum.beatsMissed = 0;
-            myDrum.matchLatencyList = [0,0,0,0,0,0,0,0,0,0];    // Start with 0ms avg
 
             // heartBeat interval for checking to see if the right amount of time has passed for a beat to occur
             myDrum.beatIntervalID = Script.setInterval(function () {
@@ -419,11 +440,6 @@
 
                     // set timestamp for *next* beat
                     myDrum.futureBeat = Date.now() + myDrum.getIntervalFromBpm(myDrum.BPM);
-
-                    // Trailing matched beat latency list
-                    if (myDrum.matchLatencyList.length > 10) {      //  magic 10 into CONST
-                        myDrum.matchLatencyList.shift();
-                    }
 
                     // Start beat timer
                     myDrum.timeAtStartOfBeat = new Date();
@@ -452,15 +468,18 @@
                                     "center"
                                 );
 
-                            myDrum.newScoreboardDisplay[4] =
+                            myDrum.newScoreboardDisplay[3] =
                                 myDrum.myScoreboard.justifyLine(
-                                    myDrum.myScoreboard.scoreboardStrings.AVERAGE_BEATMATCH_LATENCY, "center"
+                                    myDrum.myScoreboard.scoreboardStrings.LAST_BEAT_ERROR +
+                                    theDrumObjThis.offset,
+                                    "center"
                                 );
 
-                            myDrum.newScoreboardDisplay[5] =
+                            myDrum.newScoreboardDisplay[4] =
                                 myDrum.myScoreboard.justifyLine(
-                                    myDrum.getAverageFromList(myDrum.matchLatencyList) +
-                                    myDrum.myScoreboard.scoreboardStrings.TIME_LATE,
+                                    myDrum.myScoreboard.scoreboardStrings.AVERAGE_ERROR +
+                                    Math.round(theDrumObjThis.averageError,1) + " " +
+                                    myDrum.myScoreboard.scoreboardStrings.TIME_SCALE,
                                     "center"
                                 );
 
@@ -471,7 +490,9 @@
                             myDrum.newScoreboardDisplay[7] = myDrum.myScoreboard.getScoreboardBorder();
 
                             // Update scoreboard display!
-                            myDrum.myScoreboard.updateScoreboard(myDrum.newScoreboardDisplay);
+                            myDrum.myScoreboard.updateScoreboard(
+                                myDrum.newScoreboardDisplay,
+                                myDrum.myScoreboard.BEAT_HIGH_SCORE_TEXT_COLOR);
 
                         } else {
 
@@ -496,26 +517,34 @@
 
                             myDrum.newScoreboardDisplay[4] =
                                 myDrum.myScoreboard.justifyLine(
-                                    myDrum.myScoreboard.scoreboardStrings.AVERAGE_BEATMATCH_LATENCY,
-                                    "center"
+                                    myDrum.myScoreboard.scoreboardStrings.LAST_BEAT_ERROR +
+                                    theDrumObjThis.offset,
+                                    "left"
                                 );
 
                             myDrum.newScoreboardDisplay[5] =
                                 myDrum.myScoreboard.justifyLine(
-                                    myDrum.getAverageFromList(myDrum.matchLatencyList) +
-                                    myDrum.myScoreboard.scoreboardStrings.TIME_LATE,
+                                    myDrum.myScoreboard.scoreboardStrings.AVERAGE_ERROR +
+                                    Math.round(theDrumObjThis.averageError,1) + " " +
+                                    myDrum.myScoreboard.scoreboardStrings.TIME_SCALE,
                                     "center"
                                 );
 
                             myDrum.newScoreboardDisplay[7] = myDrum.myScoreboard.getScoreboardBorder();
 
                             // Update scoreboard display!
-                            myDrum.myScoreboard.updateScoreboard(myDrum.newScoreboardDisplay);
+                            myDrum.myScoreboard.updateScoreboard(
+                                myDrum.newScoreboardDisplay,
+                                myDrum.myScoreboard.SHOW_HIGH_SCORE_TEXT_COLOR
+                            );
                         }
 
                         // Display High Score for a few seconds before resetting
                         Script.setTimeout(function () {
-                            myDrum.myScoreboard.updateScoreboard(myDrum.myScoreboard.getScoreboardGreeting());
+                            myDrum.myScoreboard.updateScoreboard(
+                                myDrum.myScoreboard.getScoreboardGreeting(),
+                                myDrum.myScoreboard.GREETING_TEXT_COLOR
+                                );
                         }, myDrum.SCOREBOARD_RESET_DELAY);
 
                         return;
@@ -531,7 +560,7 @@
                     myDrum.beatCounter++;
 
                     // pulse color to red on beat
-                    Entities.editEntity(myDrum.entityID, myDrum.beatColor);
+                    Entities.editEntity(myDrum.entityID, myDrum.UNCLICKED_BEAT_TEXT_COLOR);
 
                     // Reset to starting color after beat
                     myDrum.colorResetTimeoutID = Script.setTimeout(function () {
@@ -563,29 +592,11 @@
                                 "center"
                             );
 
-                        myDrum.newScoreboardDisplay[5] =
-                            myDrum.myScoreboard.justifyLine(
-                                myDrum.myScoreboard.scoreboardStrings.AVERAGE_BEATMATCH_LATENCY,
-                                "center"
-                            );
-
-                        myDrum.newScoreboardDisplay[6] =
-                            myDrum.myScoreboard.justifyLine(
-                                myDrum.getAverageFromList(myDrum.matchLatencyList) +
-                                myDrum.myScoreboard.scoreboardStrings.TIME_LATE,
-                                "center"
-                            );
-
-                        myDrum.newScoreboardDisplay[7] =
-                            myDrum.myScoreboard.justifyLine(
-                                myDrum.myScoreboard.scoreboardStrings.LAST_BEAT_MATCH +
-                                myDrum.hitTimeAfterBeat +
-                                myDrum.myScoreboard.scoreboardStrings.TIME_LATE,
-                                "center"
-                            );
-
                         // Update scoreboard display!
-                        myDrum.myScoreboard.updateScoreboard(myDrum.newScoreboardDisplay);
+                        myDrum.myScoreboard.updateScoreboard(
+                            myDrum.newScoreboardDisplay,
+                            myDrum.myScoreboard.UNCLICKED_BEAT_TEXT_COLOR
+                        );
                     }
 
                     myDrum.beatAttempted = false;
@@ -597,7 +608,7 @@
         // :::: Stop Beat ::::
         stopBeat: function() {
 
-            print("-----STOPPING BEAT-----");
+            // print("-----STOPPING BEAT-----");
 
 
             // Play Game Over sound!
@@ -605,7 +616,10 @@
                 myDrum.gameOverSound, myDrum.gameOverSoundOptions);
 
             // Reset Scoreboard to greeting
-            myDrum.myScoreboard.updateScoreboard(myDrum.myScoreboard.getScoreboardGreeting());
+            myDrum.myScoreboard.updateScoreboard(
+                myDrum.myScoreboard.getScoreboardGreeting,
+                myDrum.myScoreboard.GREETING_TEXT_COLOR
+            );
 
             // Reset Intervals
             Script.clearInterval(myDrum.beatIntervalID);
@@ -630,7 +644,7 @@
         // Check Drum hit
         checkDrumHit: function(){
 
-            print("|||| CHECKING DRUM HIT ||||");
+            // print("|||| CHECKING DRUM HIT ||||");
 
 
             myDrum.beatAttempted = true;
@@ -638,6 +652,13 @@
 
             // Get time difference from start of beat to drum hit
             myDrum.hitTimeAfterBeat = myDrum.timeAtStartOfHit - myDrum.timeAtStartOfBeat;
+
+            theDrumObjThis.offset = (theDrumObjThis.hitTimeAfterBeat < theDrumObjThis.getIntervalFromBpm(myDrum.BPM)/2) ?
+                (theDrumObjThis.hitTimeAfterBeat * -1) :
+                theDrumObjThis.getIntervalFromBpm(myDrum.BPM) - theDrumObjThis.hitTimeAfterBeat;
+
+            //  show trailing average of last 20 errors or so
+            theDrumObjThis.averageError = 0.05 * Math.abs(theDrumObjThis.offset) + 0.95 * theDrumObjThis.averageError;
 
             // hit within after beat range
             if(myDrum.hitTimeAfterBeat <=
@@ -664,15 +685,12 @@
         },
         matchBeat: function(){
 
-            print("OOOO MATCHED BEAT 0000");
+            // print("OOOO MATCHED BEAT 0000");
 
             myDrum.beatsMatched++;
 
             // pulse color to theDrumObjthis.match Green on match
             Entities.editEntity(myDrum.entityID, myDrum.matchColor);
-
-            // add 1 to match success list
-            myDrum.matchLatencyList.push(myDrum.hitTimeAfterBeat);
 
             myDrum.newScoreboardDisplay = myDrum.myScoreboard.getNewScoreboardDisplay();
 
@@ -702,30 +720,29 @@
 
             myDrum.newScoreboardDisplay[5] =
                 myDrum.myScoreboard.justifyLine(
-                    myDrum.myScoreboard.scoreboardStrings.AVERAGE_BEATMATCH_LATENCY,
+                    myDrum.myScoreboard.scoreboardStrings.LAST_BEAT_ERROR +
+                    theDrumObjThis.offset,
                     "center"
                 );
 
             myDrum.newScoreboardDisplay[6] =
                 myDrum.myScoreboard.justifyLine(
-                    myDrum.getAverageFromList(myDrum.matchLatencyList) +
-                    myDrum.myScoreboard.scoreboardStrings.TIME_LATE,
-                    "center"
-                );
-            myDrum.newScoreboardDisplay[7] =
-                myDrum.myScoreboard.justifyLine(
-                    myDrum.myScoreboard.scoreboardStrings.LAST_BEAT_MATCH +
-                    myDrum.hitTimeAfterBeat +
-                    myDrum.myScoreboard.scoreboardStrings.TIME_LATE,
+                    myDrum.myScoreboard.scoreboardStrings.AVERAGE_ERROR +
+                    Math.round(theDrumObjThis.averageError,1) + " " +
+                    myDrum.myScoreboard.scoreboardStrings.TIME_SCALE,
                     "center"
                 );
 
             // Update scoreboard display!
-            myDrum.myScoreboard.updateScoreboard(myDrum.newScoreboardDisplay);
+            myDrum.myScoreboard.updateScoreboard(
+                myDrum.newScoreboardDisplay,
+                myDrum.myScoreboard.MATCHED_BEAT_TEXT_COLOR
+            );
+
         },
         missBeat: function(){
 
-            print("QQQQQQQQQ MMISSED BEAT QQQQQQQQ");
+            // print("QQQQQQQQQ MMISSED BEAT QQQQQQQQ");
 
             myDrum.beatsMissed++;
 
@@ -756,24 +773,24 @@
 
             myDrum.newScoreboardDisplay[5] =
                 myDrum.myScoreboard.justifyLine(
-                    myDrum.myScoreboard.scoreboardStrings.AVERAGE_BEATMATCH_LATENCY, "center"
+                    myDrum.myScoreboard.scoreboardStrings.LAST_BEAT_ERROR +
+                    theDrumObjThis.offset,
+                    "center"
                 );
 
             myDrum.newScoreboardDisplay[6] =
                 myDrum.myScoreboard.justifyLine(
-                    myDrum.getAverageFromList(myDrum.matchLatencyList) +
-                    myDrum.myScoreboard.scoreboardStrings.TIME_LATE, "center"
-                );
-
-            myDrum.newScoreboardDisplay[7] =
-                myDrum.myScoreboard.justifyLine(
-                    myDrum.myScoreboard.scoreboardStrings.LAST_BEAT_MATCH +
-                    myDrum.hitTimeAfterBeat+
-                    myDrum.myScoreboard.scoreboardStrings.TIME_LATE, "center"
+                    myDrum.myScoreboard.scoreboardStrings.AVERAGE_ERROR +
+                    Math.round(theDrumObjThis.averageError,1) + " " +
+                    myDrum.myScoreboard.scoreboardStrings.TIME_SCALE,
+                    "center"
                 );
 
             // Update scoreboard display!
-            myDrum.myScoreboard.updateScoreboard(myDrum.newScoreboardDisplay);
+            myDrum.myScoreboard.updateScoreboard(
+                myDrum.newScoreboardDisplay,
+                myDrum.myScoreboard.MISSED_BEAT_TEXT_COLOR
+            );
 
         },
         // Preloads a pile of data for myDrum scope
