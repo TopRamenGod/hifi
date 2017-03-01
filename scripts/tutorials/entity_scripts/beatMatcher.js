@@ -17,7 +17,6 @@
  * with the beat to practice your rhythm! How many beats can you stay in time with?
  *
  * Are you a BeatMatch Hero?"
- * ----
  *
  *
  * -- Description and Usage --
@@ -28,8 +27,6 @@
  *
  * For hand controller detection, since there are no default colliders for avatar hands, frequent checks against a distance
  * threshold serves this purpose (Drum.checkForHandControllerDrumHit) by being registered with the Script.update method.
- * However, since this method checks TOO frequently (60 Hz) and ends up registering unintentional drum hits, it is
- * throttled (Drum.hitCheckID).
  *
  * The Scoreboard is an addressable and formattable marquee created from a text entity. Since the text entity currently
  * has no formatting capabilities, this script provides methods for justifying the contents of each line of the scoreboard.
@@ -42,7 +39,6 @@
  *      - updateScoreboard(scoreboardDisplay) // updates scoreboard!
  *  *
  * Use the Scoreboard.prototype.padLine( str, justification ) method to justify the contents of each line.
- * ----
  *
  *
  * -- Misc --
@@ -58,22 +54,18 @@
 (function() {
 
     // Displays accuracy, score, and various messages
-    var Scoreboard = function() {
+    var Scoreboard = function(position) {
 
         // For clearer scope
         theScoreboardObjThis = this;
 
         var scoreboardProperties = {
-            position: Vec3.sum(Vec3.sum(MyAvatar.position, {
-                x: 0,
-                y: 0.8375,
-                z: -0.05
-            }), Vec3.multiply(1, Quat.getFront(Camera.getOrientation()))),
+            position: position,
             type: "Text",
             name: "BeatMatcher_Scoreboard",
             parentID: myDrum.entityID,
             dimensions: {
-                x: 0.525,
+                x: 0.5075,
                 y: 0.425,
                 z: 0.1
             },
@@ -83,6 +75,10 @@
             backgroundColor: {red: 0, green: 0, blue: 0},
             defaultFaceCamera: true,
             lifetime: -1
+        }
+
+        setScoreboard = function(newTextProperty) {
+            Entities.editEntity(theScoreboardObjThis._scoreboard, newTextProperty);
         }
 
         theScoreboardObjThis._scoreboard = Entities.addEntity(scoreboardProperties);
@@ -137,9 +133,6 @@
 
         theScoreboardObjThis.scoreboardGreeting = theScoreboardObjThis.getScoreboardGreeting();
 
-        setScoreboard = function(newTextProperty) {
-            Entities.editEntity(theScoreboardObjThis._scoreboard, newTextProperty);
-        }
     };
 
     Scoreboard.prototype = {
@@ -148,15 +141,12 @@
         },
         // returns a pre-formatted scoreboard title and screen border line
         getScoreboardBorder: function(){
-            var scoreboardBorder = theScoreboardObjThis.scoreboardStrings.BORDER_ENDS +
+            return theScoreboardObjThis.scoreboardStrings.BORDER_ENDS +
                 theScoreboardObjThis.repeatString(
                     theScoreboardObjThis.scoreboardStrings.HEADER_PADDING,
                     theScoreboardObjThis.REQUIRED_LINE_LENGTH-3
                 ) +
-                theScoreboardObjThis.scoreboardStrings.BORDER_ENDS;
-
-            return scoreboardBorder;
-
+                theScoreboardObjThis.scoreboardStrings.BORDER_ENDS
         },
         
         // returns a scoreboard greeting template of a new scoreboard display object
@@ -290,6 +280,9 @@
 
             return line;
         },
+        deleteScoreboard: function() {
+            Entities.deleteEntity(theScoreboardObjThis._scoreboard);
+        },
     };
 
     Drum = function() {
@@ -305,7 +298,6 @@
         // Match success list - last 10 hits
         this.matchLatencyList = [];
 
-
         // ::: Mouse Click Operation :::
         this.clickDownOnEntity = function(entityID, mouseEvent){
             if (Entities.getEntityProperties(theDrumObjThis.entityID).name == "BeatMatcher_Drum") {
@@ -320,22 +312,22 @@
         // ::: Hand Controller Operation :::
         this.checkForHandControllerDrumHit = function(){
 
-            var rightHandControllerPosition = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation,
-                MyAvatar.getAbsoluteJointTranslationInObjectFrame(rightHandControllerJointIndex)));
+            var drumRadius = Entities.getEntityProperties(theDrumObjThis.entityID).dimensions.x / 2;
 
-            var lefthandControllerPosition = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation,
-                MyAvatar.getAbsoluteJointTranslationInObjectFrame(leftHandControllerJointIndex)));
-
-            // hand controller distances to drum
-            var rightHandDistanceToDrum = Vec3.distance(rightHandControllerPosition,
+            // hand controller distance to drum
+            var rightHandDistanceToDrum = Vec3.distance(MyAvatar.getJointPosition("RightHandIndex4"),
                 Entities.getEntityProperties(theDrumObjThis.entityID).position);
-            var leftHandDistanceToDrum = Vec3.distance(lefthandControllerPosition,
+            var leftHandDistanceToDrum = Vec3.distance(MyAvatar.getJointPosition("LeftHandIndex4"),
                 Entities.getEntityProperties(theDrumObjThis.entityID).position);
 
-            if ((rightHandDistanceToDrum <= 0.13 || leftHandDistanceToDrum <= 0.13) && !handInRadius) {
+            if (!handInRadius && (rightHandDistanceToDrum <= drumRadius || leftHandDistanceToDrum <= drumRadius)) {
                 handInRadius = true;
-
                 theDrumObjThis.hitDrum();
+            }
+
+            // hysteresis to avoid 'bouncing' detection
+            if (handInRadius && (rightHandDistanceToDrum >= drumRadius * 1.1 && leftHandDistanceToDrum >= drumRadius * 1.1)) {
+                handInRadius = false;
             }
         };
 
@@ -364,14 +356,10 @@
             }
         };
 
-        // Throttle hit detection
-        this.hitCheckID = Script.setInterval(function(){ handInRadius = false; }, this.HIT_DETECTION_THROTTLE_WINDOW);
-
         // Timing
         // e.g.: 60,000 ms / 120 BPM = 500 ms per beat. Inherent latency is much more manageable at lower BPMs.
         this.BPM = 80;
         this.MISS_LIMIT = 5;
-        this.HIT_DETECTION_THROTTLE_WINDOW = 500;
         this.BPM_CHECK_HEARTBEAT_INTERVAL = 5;
         this.beatCounter = 0;
         this.beatAttempted = false;
@@ -396,6 +384,8 @@
 
         hitDrum: function(){
 
+            print("XXXX HIT DRUM XXXX");
+
             // :::: Start beat ::::
             if(!myDrum.hasBeatStarted && myDrum.beatCounter <= 0) {
 
@@ -407,14 +397,15 @@
                 this.startBeat();
 
             // :::: Check drum hit if already started ::::
-            } else if(myDrum.hasBeatStarted && (myDrum.beatCounter > 0 &&
-                myDrum.beatsMissed <= myDrum.MISS_LIMIT)){
+            } else if(myDrum.hasBeatStarted && (myDrum.beatCounter > 0 && myDrum.beatsMissed <= myDrum.MISS_LIMIT)){
 
                 // :::: Check if Drum hit is beat miss or match ::::
                 this.checkDrumHit();
             }
         },
         startBeat: function() {     // most of the active game logic happens here
+
+            print("++++STARTING BEAT++++");
 
             // Reset matches and misses
             myDrum.beatsMatched = 0;
@@ -599,10 +590,15 @@
 
                     myDrum.beatAttempted = false;
                 }
+
             }, myDrum.BPM_CHECK_HEARTBEAT_INTERVAL);
+
         },
         // :::: Stop Beat ::::
         stopBeat: function() {
+
+            print("-----STOPPING BEAT-----");
+
 
             // Play Game Over sound!
             myDrum.soundInjector = Audio.playSound(
@@ -634,6 +630,9 @@
         // Check Drum hit
         checkDrumHit: function(){
 
+            print("|||| CHECKING DRUM HIT ||||");
+
+
             myDrum.beatAttempted = true;
             myDrum.timeAtStartOfHit = new Date();
 
@@ -664,6 +663,8 @@
             }, myDrum.getIntervalFromBpm(myDrum.BPM) / 4);
         },
         matchBeat: function(){
+
+            print("OOOO MATCHED BEAT 0000");
 
             myDrum.beatsMatched++;
 
@@ -723,6 +724,8 @@
             myDrum.myScoreboard.updateScoreboard(myDrum.newScoreboardDisplay);
         },
         missBeat: function(){
+
+            print("QQQQQQQQQ MMISSED BEAT QQQQQQQQ");
 
             myDrum.beatsMissed++;
 
@@ -819,12 +822,18 @@
                 print("*****"+myDrum.gameOverURL+" failed to download!******"); }
 
             // make rest of BeatMatcher
-            myDrum.myScoreboard = new Scoreboard();
+            myDrum.myScoreboard = new Scoreboard(Vec3.sum(this.entityPosition,{x: 0, y: 0.250, z: -0.05}));
         },
-        // Clear timers on script death
         unload: function(){
-            Script.clearInterval(myDrum.hitCheckID);
+            // clear beat timer
             Script.clearInterval(myDrum.beatIntervalID);
+
+            // delete Scoreboard entity and object
+            myDrum.myScoreboard.deleteScoreboard();
+
+            // De-register hand controller listener
+            Script.update.disconnect(this.checkForHandControllerDrumHit);
+
         }
     };
 

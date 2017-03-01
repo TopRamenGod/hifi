@@ -24,9 +24,9 @@ var beatMatcherProperties = {
     type: "Sphere",
     script: SCRIPT_URL,
     dimensions: {
-        x: 0.12,
-        y: 0.12,
-        z: 0.12
+        x: 0.15,
+        y: 0.15,
+        z: 0.15
     },
     lifetime: 3600,
     userData: JSON.stringify({
