@@ -81,6 +81,7 @@
         theScoreboardObjThis.MATCHED_BEAT_TEXT_COLOR = {red: 212, green: 250, blue: 205};       // Light Green
         theScoreboardObjThis.MISSED_BEAT_TEXT_COLOR = {red: 232, green: 190, blue: 160};        // Light Orange
         theScoreboardObjThis.GREETING_TEXT_COLOR = {red: 0, green: 255, blue: 0};               // Green
+        theScoreboardObjThis.EASY_HIGH_SCORE_TEXT_COLOR = {red: 0, green: 128, blue: 0};        // Light Green
         theScoreboardObjThis.BEAT_HIGH_SCORE_TEXT_COLOR = {red: 255, green: 128, blue: 0};      // Dark Orange
         theScoreboardObjThis.SHOW_HIGH_SCORE_TEXT_COLOR = {red: 200, green: 128, blue: 100};    // Muted Dark Orange?
 
@@ -105,6 +106,7 @@
         ];
         theScoreboardObjThis.scoreboardStrings = {
             "BEATMATCHER_NAME": "BeatMatcher 5000",
+            "EASY_MODE": "Easy mode!",
             "START_1": "Hit/click the",
             "START_2": "sphere to start!",
             "GAME_OVER": "GAME OVER",
@@ -127,6 +129,7 @@
             "LAST_BEAT_ERROR": "Last hit offset: ",
             "AVERAGE_ERROR": "Avg. offset: ",
             "YEAR_LINE": "--2017 High Fidelity--",
+            "EASY_GAME_OVER": "Thanks for playing!",
         };
 
         // Scoreboard Display Object Dimensions
@@ -136,6 +139,9 @@
         theScoreboardObjThis.NUM_DISPLAY_LINES = 8;
 
         theScoreboardObjThis.scoreboardGreeting = theScoreboardObjThis.getScoreboardGreeting();
+
+        theScoreboardObjThis.screenType = "";
+        theScoreboardObjThis.textColor= {};
     };
 
     Scoreboard.prototype = {
@@ -154,27 +160,48 @@
         },
 
         // returns a scoreboard greeting template of a new scoreboard display object
-        getScoreboardGreeting: function(){
+        getScoreboardGreeting: function(type){
 
-            // get new scoreboard display object
+            // Default type parameter
+            if(!type){
+                var type = 'easy';
+            }
+
             newScoreboardGreeting = this.getNewScoreboardDisplay();
 
-            // update each the scoreboard display object lines we want to use
             newScoreboardGreeting["0"] = this.getScoreboardBorder() + "\n";
-
             newScoreboardGreeting["1"] =
                 theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.BEATMATCHER_NAME, "center");
-
             newScoreboardGreeting["2"] = this.getScoreboardBorder() + "\n";
 
-            newScoreboardGreeting["4"] =
-                theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.START_1, "left");
+            // Build new scoreboard greeting display object - Normal Mode
+            if (type == 'normal') {
 
-            newScoreboardGreeting["5"] =
-                theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.START_2, "right");
+                newScoreboardGreeting["4"] =
+                    theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.START_1, "left");
 
-            newScoreboardGreeting["7"] =
-                theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.YEAR_LINE, "center");
+                newScoreboardGreeting["5"] =
+                    theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.START_2, "right");
+
+                newScoreboardGreeting["7"] =
+                    theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.YEAR_LINE, "center");
+            }
+            // Build new scoreboard greeting display object - Easy Mode
+            else if (type == 'easy'){
+
+                newScoreboardGreeting["3"] =
+                    theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.EASY_MODE, "center");
+
+                newScoreboardGreeting["4"] =
+                    theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.START_1, "left");
+
+                newScoreboardGreeting["5"] =
+                    theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.START_2, "right");
+
+                newScoreboardGreeting["7"] =
+                    theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.YEAR_LINE, "center");
+
+            }
 
             return newScoreboardGreeting;
 
@@ -184,9 +211,12 @@
 
             newScoreboardHighScore = this.getNewScoreboardDisplay();
 
+            // These lines always display on the high score screen
+            newScoreboardHighScore[0] = theScoreboardObjThis.getScoreboardBorder() + "\n";
+            newScoreboardHighScore[7] = theScoreboardObjThis.getScoreboardBorder();
+
+            // Build new scoreboard display - Game over, beat high score
             if(type == 'new') {
-                // Build new scoreboard display - Game over, beat high score
-                newScoreboardHighScore[0] = theScoreboardObjThis.getScoreboardBorder() + "\n";
 
                 newScoreboardHighScore[1] =
                     theScoreboardObjThis.justifyLine(
@@ -217,12 +247,10 @@
                     theScoreboardObjThis.justifyLine(
                         theScoreboardObjThis.scoreboardStrings.GAME_OVER, "center");
 
-                newScoreboardHighScore[7] = theScoreboardObjThis.getScoreboardBorder();
             }
-            else if(type == 'current'){
 
-                // Build new scoreboard display - Game over, did not beat high score
-                newScoreboardHighScore[0] = theScoreboardObjThis.getScoreboardBorder() + "\n";
+            // Build new scoreboard display - Game over, did not beat high score
+            else if(type == 'current'){
 
                 newScoreboardHighScore[1] =
                     theScoreboardObjThis.justifyLine(
@@ -252,9 +280,31 @@
                         theScoreboardObjThis.scoreboardStrings.TIME_SCALE,
                         "center"
                     );
+            }
 
-                newScoreboardHighScore[7] = theScoreboardObjThis.getScoreboardBorder();
+            // Build new scoreboard display - Easy mode post-game
+            else if(type=='easy'){
 
+                newScoreboardHighScore[1] =
+                    theScoreboardObjThis.justifyLine(
+                        theScoreboardObjThis.scoreboardStrings.EASY_GAME_OVER,
+                        "center"
+                    );
+
+                newScoreboardHighScore[4] =
+                    theScoreboardObjThis.justifyLine(
+                        theScoreboardObjThis.scoreboardStrings.LAST_BEAT_ERROR +
+                        theDrumObjThis.offset,
+                        "left"
+                    );
+
+                newScoreboardHighScore[5] =
+                    theScoreboardObjThis.justifyLine(
+                        theScoreboardObjThis.scoreboardStrings.AVERAGE_ERROR +
+                        Math.round(theDrumObjThis.averageError,1) + " " +
+                        theScoreboardObjThis.scoreboardStrings.TIME_SCALE,
+                        "center"
+                    );
             }
             
             return newScoreboardHighScore
@@ -264,14 +314,31 @@
         getScoreboardBeat: function(type){
 
             newScoreboardBeat = this.getNewScoreboardDisplay();
-            // match
-            if(type=='matched'){                // Build new scoreboard display - matched beat
 
-                newScoreboardBeat[0] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.BEATS_PLAYED + myDrum.beatCounter,
-                        "center"
-                    );
+            // These lines always display in the beat screen
+            newScoreboardBeat[0] =
+                theScoreboardObjThis.justifyLine(
+                    theScoreboardObjThis.scoreboardStrings.BEATS_PLAYED + myDrum.beatCounter,
+                    "center"
+                );
+
+            newScoreboardBeat[5] =
+                theScoreboardObjThis.justifyLine(
+                    theScoreboardObjThis.scoreboardStrings.LAST_BEAT_ERROR +
+                    theDrumObjThis.offset,
+                    "center"
+                );
+
+            newScoreboardBeat[6] =
+                theScoreboardObjThis.justifyLine(
+                    theScoreboardObjThis.scoreboardStrings.AVERAGE_ERROR +
+                    Math.round(theDrumObjThis.averageError,1) + " " +
+                    theScoreboardObjThis.scoreboardStrings.TIME_SCALE,
+                    "center"
+                );
+
+            // matched screen
+            if(type=='matched'){                // Build new scoreboard display - matched beat
 
                 // display random match scoreboard message
                 newScoreboardBeat[1] =
@@ -291,27 +358,9 @@
                         theScoreboardObjThis.scoreboardStrings.BEATS_MISSED + myDrum.beatsMissed, " center"
                     );
 
-                newScoreboardBeat[5] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.LAST_BEAT_ERROR + theDrumObjThis.offset,
-                        "center"
-                    );
-
-                newScoreboardBeat[6] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.AVERAGE_ERROR +
-                        Math.round(theDrumObjThis.averageError,1) + " " +
-                        theScoreboardObjThis.scoreboardStrings.TIME_SCALE,
-                        "center"
-                    );
-
             }
-            // miss
+            // missed screen
             else if (type == 'missed'){         // Build new scoreboard display - missed beat
-
-                newScoreboardBeat[0] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.BEATS_PLAYED + myDrum.beatCounter, "center");
 
                 newScoreboardBeat[2] =
                     theScoreboardObjThis.justifyLine(
@@ -329,29 +378,9 @@
                         "center"
                     );
 
-                newScoreboardBeat[5] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.LAST_BEAT_ERROR +
-                        theDrumObjThis.offset,
-                        "center"
-                    );
-
-                newScoreboardBeat[6] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.AVERAGE_ERROR +
-                        Math.round(theDrumObjThis.averageError,1) + " " +
-                        theScoreboardObjThis.scoreboardStrings.TIME_SCALE,
-                        "center"
-                    );
-
             }
+            // unclicked screen
             else if (type == 'unclicked'){      // Build new scoreboard display - unclicked beat
-
-                newScoreboardBeat[0] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.BEATS_PLAYED + myDrum.beatCounter,
-                        "center"
-                    );
 
                 newScoreboardBeat[2] =
                     theScoreboardObjThis.justifyLine(
@@ -364,6 +393,23 @@
                         theScoreboardObjThis.scoreboardStrings.BEATS_MISSED + myDrum.beatsMissed,
                         "center"
                     );
+            }
+            // easy mode matched screen
+            else if (type == 'easymatched'){
+
+                newScoreboardBeat[2] =
+                    theScoreboardObjThis.justifyLine(
+                        theScoreboardObjThis.scoreboardStrings.BEATS_MATCHED + myDrum.beatsMatched, "center"
+                    );
+
+            }
+            // easy mode missed screen
+            else if (type == 'easymissed'){
+
+                newScoreboardBeat[2] =
+                    theScoreboardObjThis.justifyLine(
+                        theScoreboardObjThis.scoreboardStrings.BEATS_MATCHED + myDrum.beatsMatched, "center");
+
             }
 
             return newScoreboardBeat;
@@ -557,10 +603,6 @@
             }
         };
 
-        // Disable misses for a smooth, easy, beat matching experience.
-        // TODO: Add additional entity and logic to make this selectable in-world
-        this.easyMode = false;
-
         // Timing
         // e.g.: 60,000 ms / 120 BPM = 500 ms per beat. Inherent latency is much more manageable at lower BPMs.
         this.BPM = 80;
@@ -579,12 +621,21 @@
 
         // Scoreboard object
         this.myScoreboard = {};
-        // this.newScoreboardDisplay = {};
 
         // High Score
         this.highScore = 0;
 
         this.SCOREBOARD_RESET_DELAY = 6000;
+
+        // :::: Easy Mode ::::
+        // Disable misses and high score for a smooth, easy, beat matching experience.
+        // TODO: Add additional entity and logic to make this selectable in-world
+        this.isEasyMode = true;
+        this.EASY_MODE_MISS_FACTOR = 2;
+
+        if(this.isEasyMode){
+            this.MISS_LIMIT = this.MISS_LIMIT * this.EASY_MODE_MISS_FACTOR;
+        }
 
     };
 
@@ -619,6 +670,7 @@
             myDrum.beatsMatched = 0;
             myDrum.beatsMissed = 0;
 
+
             // heartBeat interval for checking to see if the right amount of time has passed for a beat to occur
             myDrum.beatIntervalID = Script.setInterval(function () {
 
@@ -636,29 +688,50 @@
                         // Stop beat
                         myDrum.stopBeat();
 
-                        // Check beats matched against high score
-                        if (myDrum.checkUpdateHighScore(myDrum.beatsMatched)) {
+                        // Default to easy mode for High Score screen
+                        myDrum.myScoreboard.screenType = 'easy';
 
-                            // Update scoreboard display - Game over, beat high score
-                            myDrum.myScoreboard.updateScoreboard(
-                                myDrum.myScoreboard.getScoreboardHighScore('new'),
-                                myDrum.myScoreboard.BEAT_HIGH_SCORE_TEXT_COLOR
-                            );
-                        } else {
+                        myDrum.myScoreboard.textColor = myDrum.myScoreboard.EASY_HIGH_SCORE_TEXT_COLOR;
 
-                            // Update scoreboard display - Game over, did not beat high score
-                            myDrum.myScoreboard.updateScoreboard(
-                                myDrum.myScoreboard.getScoreboardHighScore('current'),
-                                myDrum.myScoreboard.SHOW_HIGH_SCORE_TEXT_COLOR
-                            );
+                        // Compare player's matched beats against high score
+                        if (myDrum.checkUpdateHighScore(myDrum.beatsMatched)) {     // Game over, beat high score
+
+                            if (!myDrum.isEasyMode){
+                                myDrum.myScoreboard.screenType = 'new';
+                                myDrum.myScoreboard.textColor = myDrum.myScoreboard.BEAT_HIGH_SCORE_TEXT_COLOR;
+                            }
+
+                        } else {                                                    // Game over, did not beat high score
+
+                            if (!myDrum.isEasyMode){
+                                myDrum.myScoreboard.screenType = 'current';
+                                myDrum.myScoreboard.textColor = myDrum.myScoreboard.SHOW_HIGH_SCORE_TEXT_COLOR;
+                            }
                         }
 
-                        // Display High Score for a few seconds before resetting
+                        // Update scoreboard display with High Score screen
+                        myDrum.myScoreboard.updateScoreboard(
+                            myDrum.myScoreboard.getScoreboardHighScore(myDrum.myScoreboard.screenType),
+                            myDrum.myScoreboard.textColor
+                        );
+
+                        // Default to easy mode for Greeting screen
+                        myDrum.myScoreboard.textColor = myDrum.myScoreboard.GREETING_TEXT_COLOR;
+
+                        if (!myDrum.isEasyMode){
+                            myDrum.myScoreboard.screenType = 'normal';
+                            // textColor = myDrum.myScoreboard.GREETING_TEXT_COLOR;
+                        } else {
+                            myDrum.myScoreboard.screenType = 'easy';
+                            // textColor = myDrum.myScoreboard.EASY_GREETING_TEXT_COLOR; TODO: Create easy mode greeting color
+                        }
+
+                        // Display end game High Score for a few seconds before resetting to Greeting
                         Script.setTimeout(function () {
                             myDrum.myScoreboard.updateScoreboard(
-                                myDrum.myScoreboard.getScoreboardGreeting(),
-                                myDrum.myScoreboard.GREETING_TEXT_COLOR
-                                );
+                                myDrum.myScoreboard.getScoreboardGreeting(myDrum.myScoreboard.screenType),
+                                myDrum.myScoreboard.textColor
+                            );
                         }, myDrum.SCOREBOARD_RESET_DELAY);
 
                         return;
@@ -685,10 +758,19 @@
                     if (!myDrum.beatAttempted) {
                         myDrum.beatsMissed++;
 
+                        // Default to easy mode
+                        myDrum.myScoreboard.screenType = 'easymissed';
+                        myDrum.myScoreboard.textColor = myDrum.myScoreboard.UNCLICKED_BEAT_TEXT_COLOR; // TODO: Create easy mode unclicked color
+
+                        if (!myDrum.isEasyMode){
+                            myDrum.myScoreboard.screenType = 'unclicked';
+                            // myDrum.myScoreboard.textColor = myDrum.myScoreboard.UNCLICKED_BEAT_TEXT_COLOR;
+                        }
+
                         // Update scoreboard display - unclicked beat
                         myDrum.myScoreboard.updateScoreboard(
-                            myDrum.myScoreboard.getScoreboardBeat('unclicked'),
-                            myDrum.myScoreboard.UNCLICKED_BEAT_TEXT_COLOR
+                            myDrum.myScoreboard.getScoreboardBeat(myDrum.myScoreboard.screenType),
+                            myDrum.myScoreboard.textColor
                         );
                     }
 
@@ -703,15 +785,24 @@
 
             // print("-----STOPPING BEAT-----");
 
-
             // Play Game Over sound!
             myDrum.soundInjector = Audio.playSound(
                 myDrum.gameOverSound, myDrum.gameOverSoundOptions);
 
-            // Reset Scoreboard to greeting
+
+            // Default to easy mode for Greeting screen
+            myDrum.myScoreboard.screenType = 'easy';
+            myDrum.myScoreboard.textColor = myDrum.myScoreboard.GREETING_TEXT_COLOR; // TODO: Create easy greeting text color
+
+            if (!myDrum.isEasyMode) {
+                myDrum.myScoreboard.screenType = 'normal';
+                // myDrum.myScoreboard.textColor = myDrum.myScoreboard.GREETING_TEXT_COLOR;
+            }
+
+            // Update scoreboard display - Greeting!
             myDrum.myScoreboard.updateScoreboard(
-                myDrum.myScoreboard.getScoreboardGreeting,
-                myDrum.myScoreboard.GREETING_TEXT_COLOR
+                myDrum.myScoreboard.getScoreboardBeat(myDrum.myScoreboard.screenType),
+                myDrum.myScoreboard.textColor
             );
 
             // Reset Intervals
@@ -738,7 +829,6 @@
         checkDrumHit: function(){
 
             // print("|||| CHECKING DRUM HIT ||||");
-
 
             myDrum.beatAttempted = true;
             myDrum.timeAtStartOfHit = new Date();
@@ -786,10 +876,19 @@
             // pulse color to theDrumObjthis.match Green on match
             Entities.editEntity(myDrum.entityID, myDrum.MATCH_COLOR);
 
-            // Update scoreboard display - matched beat
+            // Default to easy mode for beat match screen
+            myDrum.myScoreboard.screenType = 'easymatched';
+            myDrum.myScoreboard.textColor = myDrum.myScoreboard.MATCHED_BEAT_TEXT_COLOR; // TODO: Create easy mode matched color
+
+            if (!myDrum.isEasyMode) {
+                myDrum.myScoreboard.screenType = 'matched';
+                // myDrum.myScoreboard.textColor = myDrum.myScoreboard.UNCLICKED_TEXT_COLOR;
+            }
+
+            // Update scoreboard display - unclicked beat
             myDrum.myScoreboard.updateScoreboard(
-                myDrum.myScoreboard.getScoreboardBeat('matched'),
-                myDrum.myScoreboard.MATCHED_BEAT_TEXT_COLOR
+                myDrum.myScoreboard.getScoreboardBeat(myDrum.myScoreboard.screenType),
+                myDrum.myScoreboard.textColor
             );
 
         },
@@ -802,10 +901,19 @@
             // pulse color to myDrum.MISS_COLOR on miss
             Entities.editEntity(myDrum.entityID, myDrum.MISS_COLOR);
 
-            // Update scoreboard display - missed beat
+            // Default to easy mode for beat miss screen
+            myDrum.myScoreboard.screenType = 'easymissed';
+            myDrum.myScoreboard.textColor = myDrum.myScoreboard.MISSED_BEAT_TEXT_COLOR; // TODO: Create easy mode missed color
+
+            if (!myDrum.isEasyMode) {
+                myDrum.myScoreboard.screenType = 'missed';
+                // myDrum.myScoreboard.textColor = myDrum.myScoreboard.MISSED_BEAT_TEXT_COLOR;
+            }
+
+            // Update scoreboard display - unclicked beat
             myDrum.myScoreboard.updateScoreboard(
-                myDrum.myScoreboard.getScoreboardBeat('missed'),
-                myDrum.myScoreboard.MISSED_BEAT_TEXT_COLOR
+                myDrum.myScoreboard.getScoreboardBeat(myDrum.myScoreboard.screenType),
+                myDrum.myScoreboard.textColor
             );
 
         },
