@@ -397,18 +397,13 @@
             // easy mode matched screen
             else if (type == 'easymatched'){
 
-                newScoreboardBeat[2] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.BEATS_MATCHED + myDrum.beatsMatched, "center"
-                    );
+                // Custom easy mode matched beat message
 
             }
             // easy mode missed screen
             else if (type == 'easymissed'){
 
-                newScoreboardBeat[2] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.BEATS_MATCHED + myDrum.beatsMatched, "center");
+                // Custom easy mode maissed beat message
 
             }
 
@@ -915,6 +910,16 @@
                 myDrum.myScoreboard.getScoreboardBeat(myDrum.myScoreboard.screenType),
                 myDrum.myScoreboard.textColor
             );
+
+        },
+        setMode: function(){
+
+            if (myDrum.isEasyMode){
+                myDrum.isEasyMode = false;
+            }
+            else if (!myDrum.isEasyMode){
+                myDrum.isEasyMode = true;
+            }
 
         },
         // Preloads a pile of data for myDrum scope
