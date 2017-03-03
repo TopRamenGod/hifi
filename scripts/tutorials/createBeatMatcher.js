@@ -11,7 +11,7 @@
 *  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 */
 
-var SCRIPT_URL = "http://theblacksun.s3.amazonaws.com/props/beatMatcher/beatMatcher.js";
+var SCRIPT_URL = "https://raw.githubusercontent.com/TopRamenGod/hifi/21142/scripts/tutorials/entity_scripts/beatMatcher.js";
 
 // The drum entity, parent object of BeatMatcher
 var beatMatcherProperties = {

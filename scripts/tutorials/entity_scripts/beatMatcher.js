@@ -875,7 +875,7 @@
         // Disable misses and high score for a smooth, easy, beat matching experience.
         // TODO: Add additional entity and logic to make this selectable in-world
         this.isEasyMode = true;
-        this.EASY_MODE_MISS_FACTOR = 2;
+        this.EASY_MODE_MISS_FACTOR = 3;
 
         if(this.isEasyMode){
             this.MISS_LIMIT = this.MISS_LIMIT * this.EASY_MODE_MISS_FACTOR;
