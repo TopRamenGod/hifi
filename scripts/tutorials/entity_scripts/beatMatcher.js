@@ -28,16 +28,10 @@
  * For hand controller detection, since there are no default colliders for avatar hands, frequent checks against a distance
  * threshold serves this purpose (Drum.checkForHandControllerDrumHit) by being registered with the Script.update method.
  *
- * The Scoreboard is an addressable and formattable marquee created from a text entity. Since the text entity currently
- * has no formatting capabilities, this script provides methods for justifying the contents of each line of the scoreboard.
+ * The Scoreboard is an addressable and formattable marquee (including textColor) created from an array of text entities,
+ * created from ScoreboardLine objects. Since the text entity currently has no formatting capabilities, this script provides
+ * methods for justifying the contents of each line of the scoreboard.
  *
- * The general update flow of updating the scoreboard is as follows:
- *      - scoreboardDisplay = getNewScoreboardDisplay // get new, blank display object
- *      - build scoreBoardDisplay by line:
- *          scoreboardDisplay[1] = //line1 stuff
- *          scoreboardDisplay[2] = //line2 stuff....etc
- *      - updateScoreboard(scoreboardDisplay) // updates scoreboard!
- *  *
  * Use the Scoreboard.prototype.padLine( str, justification ) method to justify the contents of each line.
  *
  *
@@ -64,8 +58,8 @@
             type: "Text",
             name: "BeatMatcher_Scoreboard",
             parentID: myDrum.entityID,
-            dimensions: {x: 0.5075, y: 0.425,z: 0.1},
-            text: "Hit/click the sphere to start!",
+            dimensions: {x: 0.5075, y: 0.425, z: 0.1},
+            text: "If you can see this, something is terribly wrong.",
             lineHeight: 0.05,
             textColor: {red: 255, green: 255, blue: 255},
             backgroundColor: {red: 0, green: 0, blue: 0},
@@ -73,7 +67,9 @@
             lifetime: -1
         }
 
+        // The Scoreboard entity, use this to pass entityID
         theScoreboardObjThis._scoreboard = Entities.addEntity(scoreboardProperties);
+
 
         // :: Scoreboard State Text Colors ::
         theScoreboardObjThis.DEFAULT_TEXT_COLOR = {red: 255, green: 255, blue: 255};            // White
@@ -81,6 +77,8 @@
         theScoreboardObjThis.MATCHED_BEAT_TEXT_COLOR = {red: 212, green: 250, blue: 205};       // Light Green
         theScoreboardObjThis.MISSED_BEAT_TEXT_COLOR = {red: 232, green: 190, blue: 160};        // Light Orange
         theScoreboardObjThis.GREETING_TEXT_COLOR = {red: 0, green: 255, blue: 0};               // Green
+        theScoreboardObjThis.TITLE_TEXT_COLOR = {red: 247, green: 255, blue: 0};                // Yellow
+        theScoreboardObjThis.YEAR_TEXT_COLOR = {red: 79, green: 192, blue: 240};                // Sky Blue
         theScoreboardObjThis.EASY_HIGH_SCORE_TEXT_COLOR = {red: 0, green: 128, blue: 0};        // Light Green
         theScoreboardObjThis.BEAT_HIGH_SCORE_TEXT_COLOR = {red: 255, green: 128, blue: 0};      // Dark Orange
         theScoreboardObjThis.SHOW_HIGH_SCORE_TEXT_COLOR = {red: 200, green: 128, blue: 100};    // Muted Dark Orange?
@@ -93,17 +91,17 @@
             "good",
             "GREAT!",
             "Superb!"
-        ];
+        ]
         theScoreboardObjThis.scoreboardMissResponseList = [
             "Beat missed :(",
             "NOPE",
             "fail.",
             "miss.",
             "MISS",
-            "You can do better...",
+            "You can do better!",
             "try again",
             "hmm..."
-        ];
+        ]
         theScoreboardObjThis.scoreboardStrings = {
             "BEATMATCHER_NAME": "BeatMatcher 5000",
             "EASY_MODE": "Easy mode!",
@@ -128,9 +126,9 @@
             // "LINE_PADDING": "+",        // test character for alignment. Semi-reliable.
             "LAST_BEAT_ERROR": "Last hit offset: ",
             "AVERAGE_ERROR": "Avg. offset: ",
-            "YEAR_LINE": "--2017 High Fidelity--",
+            "YEAR_LINE": "2017 High Fidelity",
             "EASY_GAME_OVER": "Thanks for playing!",
-        };
+        }
 
         // Scoreboard Display Object Dimensions
         // Helps keep your lines the length that fit best given text entity dimensions and lineHeight
@@ -138,16 +136,18 @@
         theScoreboardObjThis.REQUIRED_LINE_LENGTH = 22;
         theScoreboardObjThis.NUM_DISPLAY_LINES = 8;
 
-        theScoreboardObjThis.scoreboardGreeting = theScoreboardObjThis.getScoreboardGreeting();
+        // slightly offset ScoreboardLines from parent Scoreboard to avoid z-fighting
+        // TODO: replace parent Scoreboard text entity with 'invisible' primitive entity of some kind?
+        theScoreboardObjThis.SCOREBOARDLINE_Z_POSITION_OFFSET = 0.015;
+        theScoreboardObjThis.SCOREBOARDLINE_Y_OFFSET = 0.02;
+
+        theScoreboardObjThis.scoreboardLineEntityIdList = [];
 
         theScoreboardObjThis.screenType = "";
         theScoreboardObjThis.textColor= {};
     };
 
     Scoreboard.prototype = {
-        setScoreboard: function(newTextProperty, newTextColorProperty) {
-            Entities.editEntity(theScoreboardObjThis._scoreboard, newTextProperty, newTextColorProperty);
-        },
 
         // returns a pre-formatted scoreboard title and screen border line
         getScoreboardBorder: function(){
@@ -159,7 +159,8 @@
                 theScoreboardObjThis.scoreboardStrings.BORDER_ENDS
         },
 
-        // returns a scoreboard greeting template of a new scoreboard display object
+
+        // returns a scoreboard greeting template of a new scoreboard display screen
         getScoreboardGreeting: function(type){
 
             // Default type parameter
@@ -167,232 +168,332 @@
                 var type = 'easy';
             }
 
-            newScoreboardGreeting = this.getNewScoreboardDisplay();
+            // start with pile of  blank text entity properties
+            newScoreboardGreetingLines = this.getRefreshedScoreboardDisplayLineTextProperties();
 
-            newScoreboardGreeting["0"] = this.getScoreboardBorder() + "\n";
-            newScoreboardGreeting["1"] =
-                theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.BEATMATCHER_NAME, "center");
-            newScoreboardGreeting["2"] = this.getScoreboardBorder() + "\n";
+            // Title Header
+            newScoreboardGreetingLines["0"] = {
+                text: this.getScoreboardBorder(),
+                textColor: myDrum.myScoreboard.GREETING_TEXT_COLOR
+            };
 
-            // Build new scoreboard greeting display object - Normal Mode
+            newScoreboardGreetingLines["1"] = {
+                text: theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.BEATMATCHER_NAME, "center"),
+                textColor: myDrum.myScoreboard.TITLE_TEXT_COLOR
+            };
+
+            newScoreboardGreetingLines["2"] = {
+                text: this.getScoreboardBorder(),
+                textColor: myDrum.myScoreboard.GREETING_TEXT_COLOR
+            };
+
+            // Build new scoreboard greeting display line entity properties - Normal Mode
             if (type == 'normal') {
 
-                newScoreboardGreeting["4"] =
-                    theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.START_1, "left");
+                newScoreboardGreetingLines["4"] = {
+                    text: theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.START_1, "left"),
+                    textColor: myDrum.myScoreboard.UNCLICKED_BEAT_TEXT_COLOR
+                };
 
-                newScoreboardGreeting["5"] =
-                    theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.START_2, "right");
+                newScoreboardGreetingLines["5"]= {
+                    text: theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.START_2, "right"),
+                    textColor: myDrum.myScoreboard.UNCLICKED_BEAT_TEXT_COLOR
+                };
 
-                newScoreboardGreeting["7"] =
-                    theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.YEAR_LINE, "center");
             }
-            // Build new scoreboard greeting display object - Easy Mode
+            // Build new scoreboard greeting display line entity properties - Easy Mode
             else if (type == 'easy'){
 
-                newScoreboardGreeting["3"] =
-                    theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.EASY_MODE, "center");
+                newScoreboardGreetingLines["3"] = {
+                    text: theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.EASY_MODE, "center"),
+                    textColor: myDrum.myScoreboard.EASY_HIGH_SCORE_TEXT_COLOR
+                };
 
-                newScoreboardGreeting["4"] =
-                    theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.START_1, "left");
+                newScoreboardGreetingLines["4"] = {
+                    text: theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.START_1, "left"),
+                    textColor: myDrum.myScoreboard.SHOW_HIGH_SCORE_TEXT_COLOR
+                };
 
-                newScoreboardGreeting["5"] =
-                    theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.START_2, "right");
-
-                newScoreboardGreeting["7"] =
-                    theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.YEAR_LINE, "center");
+                newScoreboardGreetingLines["5"] = {
+                    text: theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.START_2, "right"),
+                    textColor: myDrum.myScoreboard.SHOW_HIGH_SCORE_TEXT_COLOR
+                };
 
             }
 
-            return newScoreboardGreeting;
+            // Title Footer
+            newScoreboardGreetingLines["7"] = {
+                text: theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.YEAR_LINE, "center"),
+                textColor: myDrum.myScoreboard.YEAR_TEXT_COLOR
+            };
+
+
+            return newScoreboardGreetingLines;
 
         },
-        // returns high score scoreboard display object
         getScoreboardHighScore: function(type){
 
-            newScoreboardHighScore = this.getNewScoreboardDisplay();
+            // newScoreboardHighScoreDisplayLines = this.getNewScoreboardDisplay();
+
+            // start with pile of  blank text entity properties
+            newScoreboardHighScoreDisplayLines = this.getRefreshedScoreboardDisplayLineTextProperties();
 
             // These lines always display on the high score screen
-            newScoreboardHighScore[0] = theScoreboardObjThis.getScoreboardBorder() + "\n";
-            newScoreboardHighScore[7] = theScoreboardObjThis.getScoreboardBorder();
+            newScoreboardHighScoreDisplayLines["0"] = {
+                text: this.getScoreboardBorder(),
+                textColor: theScoreboardObjThis.YEAR_TEXT_COLOR
+            };
+            newScoreboardHighScoreDisplayLines["7"] = {
+                text: this.getScoreboardBorder(),
+                textColor: theScoreboardObjThis.YEAR_TEXT_COLOR
+            };
 
             // Build new scoreboard display - Game over, beat high score
             if(type == 'new') {
 
-                newScoreboardHighScore[1] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.NEW_HIGH_SCORE, "center");
+                newScoreboardHighScoreDisplayLines["1"] = {
+                    text:
+                        theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.NEW_HIGH_SCORE, "center"),
+                    textColor: myDrum.myScoreboard.BEAT_HIGH_SCORE_TEXT_COLOR
+                };
 
-                newScoreboardHighScore[2] =
-                    theScoreboardObjThis.justifyLine(
-                        myDrum.highScore + theScoreboardObjThis.scoreboardStrings.MATCHES_EXCL,
-                        "center"
-                    );
+                newScoreboardHighScoreDisplayLines["2"] = {
+                    text:
+                        theScoreboardObjThis.justifyLine(
+                            myDrum.highScore + theScoreboardObjThis.scoreboardStrings.MATCHES_EXCL,
+                            "center"
+                        ),
+                    textColor: myDrum.myScoreboard.BEAT_HIGH_SCORE_TEXT_COLOR
+                };
 
-                newScoreboardHighScore[3] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.LAST_BEAT_ERROR +
-                        theDrumObjThis.offset,
-                        "center"
-                    );
+                newScoreboardHighScoreDisplayLines["3"] = {
+                    text:
+                        theScoreboardObjThis.justifyLine(
+                            theScoreboardObjThis.scoreboardStrings.LAST_BEAT_ERROR +
+                            theDrumObjThis.offset,
+                            "center"
+                        ),
+                    textColor: myDrum.myScoreboard.BEAT_HIGH_SCORE_TEXT_COLOR
+                };
 
-                newScoreboardHighScore[4] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.AVERAGE_ERROR +
-                        Math.round(theDrumObjThis.averageError, 1) + " " +
-                        theScoreboardObjThis.scoreboardStrings.TIME_SCALE,
-                        "center"
-                    );
+                newScoreboardHighScoreDisplayLines["4"] = {
+                    text:
+                        theScoreboardObjThis.justifyLine(
+                            theScoreboardObjThis.scoreboardStrings.AVERAGE_ERROR +
+                            Math.round(theDrumObjThis.averageError, 1) + " " +
+                            theScoreboardObjThis.scoreboardStrings.TIME_SCALE,
+                            "center"
+                        ),
+                    textColor: myDrum.myScoreboard.BEAT_HIGH_SCORE_TEXT_COLOR
+                };
 
-                newScoreboardHighScore[6] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.GAME_OVER, "center");
+                newScoreboardHighScoreDisplayLines["6"] = {
+                    text:
+                        theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.GAME_OVER, "center"),
+                    textColor: myDrum.myScoreboard.GREETING_TEXT_COLOR
+                };
 
             }
 
             // Build new scoreboard display - Game over, did not beat high score
             else if(type == 'current'){
 
-                newScoreboardHighScore[1] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.GAME_OVER,
-                        "center"
-                    );
+                newScoreboardHighScoreDisplayLines["1"] = {
+                    text:
+                        theScoreboardObjThis.justifyLine(
+                            theScoreboardObjThis.scoreboardStrings.GAME_OVER,
+                            "center"
+                        ),
+                    textColor: myDrum.myScoreboard.GREETING_TEXT_COLOR
+                };
 
-                newScoreboardHighScore[2] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.HIGH_SCORE +
-                        myDrum.highScore +
-                        theScoreboardObjThis.scoreboardStrings.MATCHES,
-                        "center"
-                    );
+                newScoreboardHighScoreDisplayLines["2"] = {
+                    text:
+                        theScoreboardObjThis.justifyLine(
+                            theScoreboardObjThis.scoreboardStrings.HIGH_SCORE +
+                            myDrum.highScore +
+                            theScoreboardObjThis.scoreboardStrings.MATCHES,
+                            "center"
+                        ),
+                    textColor: myDrum.myScoreboard.SHOW_HIGH_SCORE_TEXT_COLOR
+                };
 
-                newScoreboardHighScore[4] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.LAST_BEAT_ERROR +
-                        theDrumObjThis.offset,
-                        "left"
-                    );
+                newScoreboardHighScoreDisplayLines["4"] = {
+                    text:
+                        theScoreboardObjThis.justifyLine(
+                            theScoreboardObjThis.scoreboardStrings.LAST_BEAT_ERROR +
+                            theDrumObjThis.offset,
+                            "left"
+                        ),
+                    textColor: myDrum.myScoreboard.SHOW_HIGH_SCORE_TEXT_COLOR
+                };
 
-                newScoreboardHighScore[5] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.AVERAGE_ERROR +
-                        Math.round(theDrumObjThis.averageError,1) + " " +
-                        theScoreboardObjThis.scoreboardStrings.TIME_SCALE,
-                        "center"
-                    );
+                newScoreboardHighScoreDisplayLines["5"] = {
+                    text:
+                        theScoreboardObjThis.justifyLine(
+                            theScoreboardObjThis.scoreboardStrings.AVERAGE_ERROR +
+                            Math.round(theDrumObjThis.averageError,1) + " " +
+                            theScoreboardObjThis.scoreboardStrings.TIME_SCALE,
+                            "center"
+                        ),
+                    textColor: myDrum.myScoreboard.SHOW_HIGH_SCORE_TEXT_COLOR
+                };
             }
 
             // Build new scoreboard display - Easy mode post-game
             else if(type=='easy'){
 
-                newScoreboardHighScore[1] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.EASY_GAME_OVER,
-                        "center"
-                    );
+                newScoreboardHighScoreDisplayLines["1"] = {
+                    text:
+                        theScoreboardObjThis.justifyLine(
+                            theScoreboardObjThis.scoreboardStrings.EASY_GAME_OVER,
+                            "center"
+                        ),
+                    textColor: myDrum.myScoreboard.YEAR_TEXT_COLOR
+                };
 
-                newScoreboardHighScore[4] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.LAST_BEAT_ERROR +
-                        theDrumObjThis.offset,
-                        "left"
-                    );
+                newScoreboardHighScoreDisplayLines["4"] = {
+                    text:
+                        theScoreboardObjThis.justifyLine(
+                            theScoreboardObjThis.scoreboardStrings.LAST_BEAT_ERROR +
+                            theDrumObjThis.offset,
+                            "left"
+                        ),
+                    textColor: myDrum.myScoreboard.YEAR_TEXT_COLOR
+                };
 
-                newScoreboardHighScore[5] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.AVERAGE_ERROR +
-                        Math.round(theDrumObjThis.averageError,1) + " " +
-                        theScoreboardObjThis.scoreboardStrings.TIME_SCALE,
-                        "center"
-                    );
+                newScoreboardHighScoreDisplayLines["5"] = {
+                    text:
+                        theScoreboardObjThis.justifyLine(
+                            theScoreboardObjThis.scoreboardStrings.AVERAGE_ERROR +
+                            Math.round(theDrumObjThis.averageError,1) + " " +
+                            theScoreboardObjThis.scoreboardStrings.TIME_SCALE,
+                            "center"
+                        ),
+                    textColor: myDrum.myScoreboard.YEAR_TEXT_COLOR
+                };
             }
             
-            return newScoreboardHighScore
+            return newScoreboardHighScoreDisplayLines
         },
 
         // returns beat scoreboard display object
         getScoreboardBeat: function(type){
 
-            newScoreboardBeat = this.getNewScoreboardDisplay();
+            // newScoreboardBeatDisplayLines = this.getNewScoreboardDisplay();
+            newScoreboardBeatDisplayLines = this.getRefreshedScoreboardDisplayLineTextProperties();
 
             // These lines always display in the beat screen
-            newScoreboardBeat[0] =
-                theScoreboardObjThis.justifyLine(
-                    theScoreboardObjThis.scoreboardStrings.BEATS_PLAYED + myDrum.beatCounter,
-                    "center"
-                );
+            newScoreboardBeatDisplayLines["0"] = {
+                text:
+                    theScoreboardObjThis.justifyLine(
+                        theScoreboardObjThis.scoreboardStrings.BEATS_PLAYED + myDrum.beatCounter,
+                        "center"
+                    ),
+                textColor: myDrum.myScoreboard.YEAR_TEXT_COLOR
+            };
 
-            newScoreboardBeat[5] =
-                theScoreboardObjThis.justifyLine(
-                    theScoreboardObjThis.scoreboardStrings.LAST_BEAT_ERROR +
-                    theDrumObjThis.offset,
-                    "center"
-                );
+            newScoreboardBeatDisplayLines["5"] = {
+                text:
+                    theScoreboardObjThis.justifyLine(
+                        theScoreboardObjThis.scoreboardStrings.LAST_BEAT_ERROR +
+                        theDrumObjThis.offset,
+                        "center"
+                    ),
+                textColor: myDrum.myScoreboard.DEFAULT_TEXT_COLOR
+            };
 
-            newScoreboardBeat[6] =
-                theScoreboardObjThis.justifyLine(
-                    theScoreboardObjThis.scoreboardStrings.AVERAGE_ERROR +
-                    Math.round(theDrumObjThis.averageError,1) + " " +
-                    theScoreboardObjThis.scoreboardStrings.TIME_SCALE,
-                    "center"
-                );
+            newScoreboardBeatDisplayLines["6"] = {
+                text:
+                    theScoreboardObjThis.justifyLine(
+                        theScoreboardObjThis.scoreboardStrings.AVERAGE_ERROR +
+                        Math.round(theDrumObjThis.averageError,1) + " " +
+                        theScoreboardObjThis.scoreboardStrings.TIME_SCALE,
+                        "center"
+                    ),
+                textColor: myDrum.myScoreboard.DEFAULT_TEXT_COLOR
+            };
 
             // matched screen
             if(type=='matched'){                // Build new scoreboard display - matched beat
 
                 // display random match scoreboard message
-                newScoreboardBeat[1] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardMatchResponseList[
-                            myDrum.getRandomInt(0, theScoreboardObjThis.scoreboardMatchResponseList.length -1)],
-                        "center"
-                    );
+                newScoreboardBeatDisplayLines["1"] = {
+                    text:
+                        theScoreboardObjThis.justifyLine(
+                            theScoreboardObjThis.scoreboardMatchResponseList[
+                                myDrum.getRandomInt(0, theScoreboardObjThis.scoreboardMatchResponseList.length -1)],
+                            "center"
+                        ),
+                    textColor: myDrum.myScoreboard.EASY_HIGH_SCORE_TEXT_COLOR
+                };
 
-                newScoreboardBeat[2] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.BEATS_MATCHED + myDrum.beatsMatched, "center"
-                    );
+                newScoreboardBeatDisplayLines["2"] = {
+                    text:
+                        theScoreboardObjThis.justifyLine(
+                            theScoreboardObjThis.scoreboardStrings.BEATS_MATCHED + myDrum.beatsMatched, "center"
+                        ),
+                    textColor: myDrum.myScoreboard.GREETING_TEXT_COLOR
+                };
 
-                newScoreboardBeat[3] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.BEATS_MISSED + myDrum.beatsMissed, " center"
-                    );
+                newScoreboardBeatDisplayLines["3"] = {
+                    text:
+                        theScoreboardObjThis.justifyLine(
+                            theScoreboardObjThis.scoreboardStrings.BEATS_MISSED + myDrum.beatsMissed, "center"
+                        ),
+                    textColor: myDrum.myScoreboard.MISSED_BEAT_TEXT_COLOR
+                };
 
             }
             // missed screen
             else if (type == 'missed'){         // Build new scoreboard display - missed beat
 
-                newScoreboardBeat[2] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.BEATS_MATCHED + myDrum.beatsMatched, "center");
+                newScoreboardBeatDisplayLines["2"] = {
+                    text:
+                        theScoreboardObjThis.justifyLine(
+                            theScoreboardObjThis.scoreboardStrings.BEATS_MATCHED + myDrum.beatsMatched, "center"),
+                    textColor: myDrum.myScoreboard.MATCHED_BEAT_TEXT_COLOR
+                };
 
-                newScoreboardBeat[3] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.BEATS_MISSED + myDrum.beatsMissed, "center");
+                newScoreboardBeatDisplayLines["3"] = {
+                    text:
+                        theScoreboardObjThis.justifyLine(
+                            theScoreboardObjThis.scoreboardStrings.BEATS_MISSED + myDrum.beatsMissed, "center"),
+                    textColor: myDrum.myScoreboard.BEAT_HIGH_SCORE_TEXT_COLOR
+                };
 
                 // display random miss scoreboard message
-                newScoreboardBeat[4] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardMissResponseList[
-                            myDrum.getRandomInt(0, theScoreboardObjThis.scoreboardMissResponseList.length - 1)],
-                        "center"
-                    );
+                newScoreboardBeatDisplayLines["4"] = {
+                    text:
+                        theScoreboardObjThis.justifyLine(
+                            theScoreboardObjThis.scoreboardMissResponseList[
+                                myDrum.getRandomInt(0, theScoreboardObjThis.scoreboardMissResponseList.length - 1)],
+                            "center"
+                        ),
+                    textColor: myDrum.myScoreboard.TITLE_TEXT_COLOR
+                };
 
             }
             // unclicked screen
             else if (type == 'unclicked'){      // Build new scoreboard display - unclicked beat
 
-                newScoreboardBeat[2] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.BEATS_MATCHED + myDrum.beatsMatched,
-                        "center"
-                    );
+                newScoreboardBeatDisplayLines["2"] = {
+                    text:
+                        theScoreboardObjThis.justifyLine(
+                            theScoreboardObjThis.scoreboardStrings.BEATS_MATCHED + myDrum.beatsMatched,
+                            "center"
+                        ),
+                    textColor: myDrum.myScoreboard.UNCLICKED_BEAT_TEXT_COLOR
+                };
 
-                newScoreboardBeat[3] =
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.BEATS_MISSED + myDrum.beatsMissed,
-                        "center"
-                    );
+                newScoreboardBeatDisplayLines["3"] = {
+                    text:
+                        theScoreboardObjThis.justifyLine(
+                            theScoreboardObjThis.scoreboardStrings.BEATS_MISSED + myDrum.beatsMissed,
+                            "center"
+                        ),
+                    textColor: myDrum.myScoreboard.UNCLICKED_BEAT_TEXT_COLOR
+                };
             }
             // easy mode matched screen
             else if (type == 'easymatched'){
@@ -403,51 +504,148 @@
             // easy mode missed screen
             else if (type == 'easymissed'){
 
-                // Custom easy mode maissed beat message
+                // Custom easy mode missed beat message
 
             }
 
-            return newScoreboardBeat;
+            return newScoreboardBeatDisplayLines;
 
         },
-        // get new, blank display lines object, addressable by line, so we only need update the lines we care about.
+        // returns array of default text properties, sized to the Scoreboard
+        getRefreshedScoreboardDisplayLineTextProperties: function(){
+
+            var refreshedScoreboardDisplayLineTextProperties = {};
+
+            newScoreboardLineText = theScoreboardObjThis.getBlankPaddedLine();
+
+            newScoreboardLineTextColor = myDrum.myScoreboard.DEFAULT_TEXT_COLOR;
+
+            // create NUM_DISPLAY_LINES blank padded lines for blank screen
+            for(i=0; i < theScoreboardObjThis.NUM_DISPLAY_LINES; i++) {
+
+                // add blank padded line
+                refreshedScoreboardDisplayLineTextProperties[i.toString()] = {
+                    text: this.getBlankPaddedLine(),
+                    textColor: {
+                        red: theScoreboardObjThis.DEFAULT_TEXT_COLOR.red,
+                        green: theScoreboardObjThis.DEFAULT_TEXT_COLOR.green,
+                        blue: theScoreboardObjThis.DEFAULT_TEXT_COLOR.blue
+                    }
+                };
+
+            }
+
+            return refreshedScoreboardDisplayLineTextProperties;
+
+        },
+
+        // creates new, blank ScoreboardDisplay, addressable by line, so we only need update the lines we care about.
         getNewScoreboardDisplay: function() {
 
-            var emptyScoreboardDisplay = {};
+            var newScoreboardLinePosition = {};
 
-            // create NUM_DISPLAY_LINES blank lines
-            for(i=0; i < theScoreboardObjThis.NUM_DISPLAY_LINES - 1; i++){
-                emptyScoreboardDisplay[i.toString()] =
-                    theScoreboardObjThis.repeatString(
-                        theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
-                        theScoreboardObjThis.REQUIRED_LINE_LENGTH - 2
-                ) + "\n";
+            var newScoreboardLineDimensions = {};
+            var newScoreboardLineText = "";
+            var initialRed = 255;
+            var initialGreen = 255;
+            var initialBlue = 255;
+
+            var newScoreboardLineTextColor = {};
+
+            // create NUM_DISPLAY_LINES ScoreboardLine text entities and associated empty lines for blank screen
+            for(i=0; i < theScoreboardObjThis.NUM_DISPLAY_LINES; i++){
+
+                var newScoreboardLineName = "BeatMatcher_Scoreboard_Line";
+
+                // get position for new ScoreboardLine text entity by offset from myScoreboard position
+                newScoreboardLinePosition = {
+                    x : Entities.getEntityProperties(myDrum.myScoreboard._scoreboard).position.x,
+
+                    // Depending on how the parent object is added relative to it's origin, this will either be an
+                    // addition that builds *up* or a subtraction that builds *down*
+                    y : Entities.getEntityProperties(myDrum.myScoreboard._scoreboard).position.y -
+                        (
+                            i *
+                            (Entities.getEntityProperties(myDrum.myScoreboard._scoreboard).dimensions.y /
+                            theScoreboardObjThis.NUM_DISPLAY_LINES)
+                        ) + (theScoreboardObjThis.SCOREBOARDLINE_Y_OFFSET * (theScoreboardObjThis.NUM_DISPLAY_LINES + 2)),
+                        // ),
+                    z: Entities.getEntityProperties(myDrum.myScoreboard._scoreboard).position.z +
+                        theScoreboardObjThis.SCOREBOARDLINE_Z_POSITION_OFFSET
+                };
+
+                // give new ScoreboardLine's text entity a unique name to see more easily in the Entity List
+                newScoreboardLineName = newScoreboardLineName + "_" + i.toString();
+
+                newScoreboardLineDimensions = {
+                    x: Entities.getEntityProperties(myDrum.myScoreboard._scoreboard).dimensions.x,
+
+                    // get new ScoreboardLine height from proportional division of Scoreboard height
+                    y: (Entities.getEntityProperties(myDrum.myScoreboard._scoreboard).dimensions.y /
+                        theScoreboardObjThis.NUM_DISPLAY_LINES) + theScoreboardObjThis.SCOREBOARDLINE_Y_OFFSET,
+                    z: Entities.getEntityProperties(myDrum.myScoreboard._scoreboard).dimensions.z
+                };
+
+                // get ScoreboardDisplay boot message
+                newScoreboardLineText = "ScoreboardLine " + i.toString();
+
+                // Gradient effect on initial display line text, because every opportunity for flair
+                initialRed = initialRed - 25;
+                initialGreen = initialGreen - 25;
+                initialBlue = initialBlue - 25;
+
+                newScoreboardLineTextColor = {red: initialRed, green: initialGreen, blue: initialBlue};
+
+                // Create new ScoreboardLine text entity and object and add new ScoreboardLine text Entity to world
+                new ScoreboardLine(
+                    newScoreboardLinePosition,
+                    newScoreboardLineName,
+                    newScoreboardLineDimensions,
+                    newScoreboardLineText,
+                    newScoreboardLineTextColor
+                );
             }
-            return emptyScoreboardDisplay;
+
+            return theScoreboardObjThis.scoreboardLineEntityIdList;
+
         },
 
-        // Takes in scoreboard display object and updates scoreboard entity
-        updateScoreboard: function(newScoreboardDisplay, newScoreboardTextColor){
+        // Takes in scoreboard display object and associated text lines and updates all ScoreboardLine text entities
+        updateScoreboard: function(updatedScoreboardDisplayLines){
 
-            // Default color parameter
-            if(!newScoreboardTextColor){
-                var newScoreboardTextColor = theScoreboardObjThis.DEFAULT_TEXT_COLOR;
+            if(!updatedScoreboardDisplayLines){
+                print("No ScoreboardLine entity IDs provided! Cannot update non-existent entity!");
             }
 
-            var newScoreboardText = "";
+            // combine properties to their associated display line entities and update each one
+            // for(i=0; i < theScoreboardObjThis.NUM_DISPLAY_LINES - 1; i++) {
+            for(i=0; i < theScoreboardObjThis.NUM_DISPLAY_LINES; i++) {
 
-            // Concat display object "lines" into string for text entity.
-            Object.keys(newScoreboardDisplay).forEach(function(line){
+                // print("Updating ScoreboardDisplayLine");
+                // print("text: " + updatedScoreboardDisplayLines[i.toString()].text);
 
-                // concat each line
-                newScoreboardText = newScoreboardText + newScoreboardDisplay[line];
-            });
 
-            // Update scoreboard text entity!
-            this.setScoreboard(
-                {text: newScoreboardText,
-                textColor: newScoreboardTextColor}
-            );
+                // Update scoreboard text entity!
+                theScoreboardLineObjThis.setScoreboardDisplayLine(
+                    myDrum.myScoreboard.scoreboardDisplay[i.toString()],
+                    {
+                        text: updatedScoreboardDisplayLines[i.toString()].text,
+                        textColor: updatedScoreboardDisplayLines[i.toString()].textColor}
+
+                    );
+
+            }
+        },
+        getBlankPaddedLine: function(){
+
+            // print("get blank padded line!!!!!!");
+
+            var blankPaddedLine = theScoreboardObjThis.repeatString(
+                   theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                   theScoreboardObjThis.REQUIRED_LINE_LENGTH - 2
+               ) + "\n";
+
+            return blankPaddedLine;
         },
 
         // returns a string that has been repeated n times
@@ -467,21 +665,25 @@
                 // Center justify line with LINE_PADDING string
                 if(justification == "center") {
 
+                    // print("center");
+
                     // add SIDE padding to left and right sides of line, with return character
                     line =
                         theScoreboardObjThis.repeatString(
                             theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
-                            Math.floor(lineEditLength / 2)
+                            Math.floor(lineEditLength / 2) + 3
                         ) +
                         line +
                         theScoreboardObjThis.repeatString(
                             theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
-                            Math.floor(lineEditLength / 2)
+                            Math.floor(lineEditLength / 2) + 2
                         ) + "\n";
                 }
 
                 // RIGHT justify line with LINE_PADDING string
                 if(justification == "right") {
+
+                    // print("right");
 
                     // get length of padding
                     lineEditLength = theScoreboardObjThis.REQUIRED_LINE_LENGTH - line.length;
@@ -493,12 +695,14 @@
                     // add padding to LEFT side of line, with return character
                     line = theScoreboardObjThis.repeatString(
                             theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
-                            lineEditLength
+                            lineEditLength  + 3
                         ) + line + "\n";
                 }
 
                 // LEFT justify line with LINE_PADDING string
                 if(justification == "left") {
+
+                    // print("left");
 
                     // get length of padding
                     lineEditLength = theScoreboardObjThis.REQUIRED_LINE_LENGTH - line.length;
@@ -511,11 +715,13 @@
                     line = line +
                         theScoreboardObjThis.repeatString(
                             theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
-                            lineEditLength
+                            lineEditLength  + 3
                         ) +  "\n";
                 }
 
             } else if (line > theScoreboardObjThis.REQUIRED_LINE_LENGTH -1) {           // truncate line if too long
+
+                // print("truncate");
 
                 // get newly truncated line
                 line = line.substring(
@@ -524,9 +730,52 @@
 
             return line;
         },
+        deleteScoreboardLines: function() {
+            for(line in theScoreboardObjThis.scoreboardDisplay){
+                Entities.deleteEntity(theScoreboardObjThis.scoreboardDisplay[line]);
+            }
+        },
 
         deleteScoreboard: function() {
             Entities.deleteEntity(theScoreboardObjThis._scoreboard);
+        },
+
+    };
+
+    ScoreboardLine = function(position, name, dimensions, text, textColor) {
+
+        // For clearer scope
+        theScoreboardLineObjThis = this;
+
+        var scoreboardLineProperties = {
+            position: position,
+            type: "Text",
+            name: name,
+            parentID: myDrum.myScoreboard.entityID,
+            dimensions: dimensions,
+            text: text,
+            lineHeight: 0.05,
+            textColor: textColor,
+            backgroundColor: {red: 0, green: 0, blue: 0},
+            defaultFaceCamera: true,
+            lifetime: -1
+        }
+
+        // A ScoreboardLine entity, use this to pass entityID
+        var _scoreboardLine = Entities.addEntity(scoreboardLineProperties);
+
+         theScoreboardObjThis.scoreboardLineEntityIdList.push(_scoreboardLine);
+
+    };
+
+    ScoreboardLine.prototype = {
+        setScoreboardDisplayLine: function (scoreboardDisplayLineEntityID,
+                                            newTextProperty,
+                                            newTextColorProperty) {
+            Entities.editEntity(
+                scoreboardDisplayLineEntityID,
+                newTextProperty,
+                newTextColorProperty);
         },
     };
 
@@ -715,17 +964,14 @@
 
                         if (!myDrum.isEasyMode){
                             myDrum.myScoreboard.screenType = 'normal';
-                            // textColor = myDrum.myScoreboard.GREETING_TEXT_COLOR;
                         } else {
                             myDrum.myScoreboard.screenType = 'easy';
-                            // textColor = myDrum.myScoreboard.EASY_GREETING_TEXT_COLOR; TODO: Create easy mode greeting color
                         }
 
                         // Display end game High Score for a few seconds before resetting to Greeting
                         Script.setTimeout(function () {
                             myDrum.myScoreboard.updateScoreboard(
-                                myDrum.myScoreboard.getScoreboardGreeting(myDrum.myScoreboard.screenType),
-                                myDrum.myScoreboard.textColor
+                                myDrum.myScoreboard.getScoreboardGreeting(myDrum.myScoreboard.screenType)
                             );
                         }, myDrum.SCOREBOARD_RESET_DELAY);
 
@@ -759,7 +1005,6 @@
 
                         if (!myDrum.isEasyMode){
                             myDrum.myScoreboard.screenType = 'unclicked';
-                            // myDrum.myScoreboard.textColor = myDrum.myScoreboard.UNCLICKED_BEAT_TEXT_COLOR;
                         }
 
                         // Update scoreboard display - unclicked beat
@@ -784,20 +1029,18 @@
             myDrum.soundInjector = Audio.playSound(
                 myDrum.gameOverSound, myDrum.gameOverSoundOptions);
 
-
             // Default to easy mode for Greeting screen
             myDrum.myScoreboard.screenType = 'easy';
-            myDrum.myScoreboard.textColor = myDrum.myScoreboard.GREETING_TEXT_COLOR; // TODO: Create easy greeting text color
+            // myDrum.myScoreboard.textColor = myDrum.myScoreboard.GREETING_TEXT_COLOR; // TODO: Create easy greeting text color
 
             if (!myDrum.isEasyMode) {
                 myDrum.myScoreboard.screenType = 'normal';
                 // myDrum.myScoreboard.textColor = myDrum.myScoreboard.GREETING_TEXT_COLOR;
             }
 
-            // Update scoreboard display - Greeting!
+            // Update scoreboard display
             myDrum.myScoreboard.updateScoreboard(
-                myDrum.myScoreboard.getScoreboardBeat(myDrum.myScoreboard.screenType),
-                myDrum.myScoreboard.textColor
+                myDrum.myScoreboard.getScoreboardBeat(myDrum.myScoreboard.screenType)
             );
 
             // Reset Intervals
@@ -967,14 +1210,21 @@
             if (!myDrum.gameOverSound.downloaded){
                 print("*****"+myDrum.gameOverURL+" failed to download!******"); }
 
-            // make rest of BeatMatcher
+            // make BeatMatcher Scoreboard parent entity
             myDrum.myScoreboard = new Scoreboard(Vec3.sum(this.entityPosition,{x: 0, y: 0.250, z: -0.05}));
+
+            // Create object of text entities to be our new ScoreboardDisplay to display messages
+            myDrum.myScoreboard.scoreboardDisplay = myDrum.myScoreboard.getNewScoreboardDisplay();
+
         },
         unload: function(){
             // clear beat timer
             Script.clearInterval(myDrum.beatIntervalID);
 
-            // delete Scoreboard entity and object
+            // delete ScoreboardLines child entities and object
+            myDrum.myScoreboard.deleteScoreboardLines();
+
+            // delete Scoreboard parent entity and object
             myDrum.myScoreboard.deleteScoreboard();
 
             // De-register hand controller listener
