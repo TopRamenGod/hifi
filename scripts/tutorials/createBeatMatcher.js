@@ -34,6 +34,21 @@ var beatMatcherProperties = {
     })
 }
 
-var _beatMatcher = Entities.addEntity(beatMatcherProperties);
+// A BeatMatcher entity, use this to pass entityID
+var _beatMatcherEntity = Entities.addEntity(beatMatcherProperties);
+
+
+// Credit to Coal for inspiration on this one...
+setOwner = function(entityID) {
+    var userData = JSON.parse(Entities.getEntityProperties(entityID, ["userData"]).userData);
+    creatorUUID = MyAvatar.sessionUUID;
+    userData.creatorUUID = creatorUUID;
+    Entities.editEntity(entityID, {
+        userData: JSON.stringify(userData)
+    });
+}
+
+// set 'owner' of the BeatMatcher, to avoid unnecessary duplication of child entities from other clients in the domain
+setOwner(_beatMatcherEntity);
 
 Script.stop();

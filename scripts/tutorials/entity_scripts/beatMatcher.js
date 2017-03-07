@@ -47,11 +47,16 @@
 
 (function() {
 
+    theBeatMatcherObjThis = this;
+
     // Displays accuracy, score, and various messages
     var Scoreboard = function(position) {
 
         // For clearer scope
         theScoreboardObjThis = this;
+
+        // Set the creator of the scoreboard to place in the userData
+        var scoreboardCreator = MyAvatar.sessionUUID;
 
         var scoreboardProperties = {
             position: position,
@@ -64,12 +69,18 @@
             textColor: {red: 255, green: 255, blue: 255},
             backgroundColor: {red: 0, green: 0, blue: 0},
             defaultFaceCamera: true,
-            lifetime: -1
+            lifetime: -1,
+            userData: JSON.stringify({
+                creatorUUID: scoreboardCreator
+            })
         }
 
-        // The Scoreboard entity, use this to pass entityID
-        theScoreboardObjThis._scoreboard = Entities.addEntity(scoreboardProperties);
+        if(myDrum.isDrumCreator(scoreboardCreator)){
 
+            // The Scoreboard entity, use this to pass entityID
+            theScoreboardObjThis._scoreboardEntity = Entities.addEntity(scoreboardProperties);
+
+        }
 
         // :: Scoreboard State Text Colors ::
         theScoreboardObjThis.DEFAULT_TEXT_COLOR = {red: 255, green: 255, blue: 255};            // White
@@ -160,7 +171,7 @@
         },
 
 
-        // returns a scoreboard greeting template of a new scoreboard display screen
+        // returns a prepared scoreboard display object template of a scoreboard greeting screen
         getScoreboardGreeting: function(type){
 
             // Default type parameter
@@ -227,13 +238,11 @@
                 textColor: myDrum.myScoreboard.YEAR_TEXT_COLOR
             };
 
-
             return newScoreboardGreetingLines;
 
         },
+        // returns a prepared scoreboard display object template of a scoreboard high score screen
         getScoreboardHighScore: function(type){
-
-            // newScoreboardHighScoreDisplayLines = this.getNewScoreboardDisplay();
 
             // start with pile of  blank text entity properties
             newScoreboardHighScoreDisplayLines = this.getRefreshedScoreboardDisplayLineTextProperties();
@@ -377,10 +386,9 @@
             return newScoreboardHighScoreDisplayLines
         },
 
-        // returns beat scoreboard display object
+        // returns a prepared scoreboard display object template of a scoreboard beat screen
         getScoreboardBeat: function(type){
 
-            // newScoreboardBeatDisplayLines = this.getNewScoreboardDisplay();
             newScoreboardBeatDisplayLines = this.getRefreshedScoreboardDisplayLineTextProperties();
 
             // These lines always display in the beat screen
@@ -498,13 +506,13 @@
             // easy mode matched screen
             else if (type == 'easymatched'){
 
-                // Custom easy mode matched beat message
+                // Custom easy mode matched beat message can go here
 
             }
             // easy mode missed screen
             else if (type == 'easymissed'){
 
-                // Custom easy mode missed beat message
+                // Custom easy mode missed beat message can go here
 
             }
 
@@ -559,18 +567,18 @@
 
                 // get position for new ScoreboardLine text entity by offset from myScoreboard position
                 newScoreboardLinePosition = {
-                    x : Entities.getEntityProperties(myDrum.myScoreboard._scoreboard).position.x,
+                    x : Entities.getEntityProperties(myDrum.myScoreboard._scoreboardEntity).position.x,
 
                     // Depending on how the parent object is added relative to it's origin, this will either be an
                     // addition that builds *up* or a subtraction that builds *down*
-                    y : Entities.getEntityProperties(myDrum.myScoreboard._scoreboard).position.y -
+                    y : Entities.getEntityProperties(myDrum.myScoreboard._scoreboardEntity).position.y -
                         (
                             i *
-                            (Entities.getEntityProperties(myDrum.myScoreboard._scoreboard).dimensions.y /
+                            (Entities.getEntityProperties(myDrum.myScoreboard._scoreboardEntity).dimensions.y /
                             theScoreboardObjThis.NUM_DISPLAY_LINES)
                         ) + (theScoreboardObjThis.SCOREBOARDLINE_Y_OFFSET * (theScoreboardObjThis.NUM_DISPLAY_LINES + 2)),
                         // ),
-                    z: Entities.getEntityProperties(myDrum.myScoreboard._scoreboard).position.z +
+                    z: Entities.getEntityProperties(myDrum.myScoreboard._scoreboardEntity).position.z +
                         theScoreboardObjThis.SCOREBOARDLINE_Z_POSITION_OFFSET
                 };
 
@@ -578,12 +586,12 @@
                 newScoreboardLineName = newScoreboardLineName + "_" + i.toString();
 
                 newScoreboardLineDimensions = {
-                    x: Entities.getEntityProperties(myDrum.myScoreboard._scoreboard).dimensions.x,
+                    x: Entities.getEntityProperties(myDrum.myScoreboard._scoreboardEntity).dimensions.x,
 
                     // get new ScoreboardLine height from proportional division of Scoreboard height
-                    y: (Entities.getEntityProperties(myDrum.myScoreboard._scoreboard).dimensions.y /
+                    y: (Entities.getEntityProperties(myDrum.myScoreboard._scoreboardEntity).dimensions.y /
                         theScoreboardObjThis.NUM_DISPLAY_LINES) + theScoreboardObjThis.SCOREBOARDLINE_Y_OFFSET,
-                    z: Entities.getEntityProperties(myDrum.myScoreboard._scoreboard).dimensions.z
+                    z: Entities.getEntityProperties(myDrum.myScoreboard._scoreboardEntity).dimensions.z
                 };
 
                 // get ScoreboardDisplay boot message
@@ -618,12 +626,10 @@
             }
 
             // combine properties to their associated display line entities and update each one
-            // for(i=0; i < theScoreboardObjThis.NUM_DISPLAY_LINES - 1; i++) {
             for(i=0; i < theScoreboardObjThis.NUM_DISPLAY_LINES; i++) {
 
                 // print("Updating ScoreboardDisplayLine");
                 // print("text: " + updatedScoreboardDisplayLines[i.toString()].text);
-
 
                 // Update scoreboard text entity!
                 theScoreboardLineObjThis.setScoreboardDisplayLine(
@@ -654,6 +660,8 @@
         },
 
         // Justify the contents of a line relative to REQUIRED_LINE_LENGTH. Align left, center or right.
+        // -- Developer's note: -- This seems to be pointless right now with each line being it's own text entity, as
+        // the first line in a text entity seems to consistently truncate all leading whitespace
         justifyLine: function(line, justification){
 
             // Pad or truncate to guarantee display "line" length.
@@ -737,7 +745,7 @@
         },
 
         deleteScoreboard: function() {
-            Entities.deleteEntity(theScoreboardObjThis._scoreboard);
+            Entities.deleteEntity(theScoreboardObjThis._scoreboardEntity);
         },
 
     };
@@ -746,6 +754,9 @@
 
         // For clearer scope
         theScoreboardLineObjThis = this;
+
+        // get creator of ScoreboardLine to compare against creator of Drum to avoid duplicates from other clients in the domain
+        var scoreboardLineCreator = MyAvatar.sessionUUID;
 
         var scoreboardLineProperties = {
             position: position,
@@ -758,14 +769,22 @@
             textColor: textColor,
             backgroundColor: {red: 0, green: 0, blue: 0},
             defaultFaceCamera: true,
-            lifetime: -1
+            lifetime: -1,
+            userData: JSON.stringify({
+                creatorUUID: scoreboardLineCreator
+            })
         }
 
-        // A ScoreboardLine entity, use this to pass entityID
-        var _scoreboardLine = Entities.addEntity(scoreboardLineProperties);
+        // check if creator of ScoreboardLine is also creator of Drum
+        if(myDrum.isDrumCreator(scoreboardLineCreator)){
 
-         theScoreboardObjThis.scoreboardLineEntityIdList.push(_scoreboardLine);
+            // A ScoreboardLine entity, use this to pass entityID
+            var _scoreboardLineEntity = Entities.addEntity(scoreboardLineProperties);
 
+            // Add newly created ScoreboardLine entityID to list for property access
+            theScoreboardObjThis.scoreboardLineEntityIdList.push(_scoreboardLineEntity);
+
+        }
     };
 
     ScoreboardLine.prototype = {
@@ -863,9 +882,6 @@
         this.beatsMatched = 0;
         this.beatsMissed = 0;
 
-        // Scoreboard object
-        this.myScoreboard = {};
-
         // High Score
         this.highScore = 0;
 
@@ -874,7 +890,7 @@
         // :::: Easy Mode ::::
         // Disable misses and high score for a smooth, easy, beat matching experience.
         // TODO: Add additional entity and logic to make this selectable in-world
-        this.isEasyMode = true;
+        this.isEasyMode = false;
         this.EASY_MODE_MISS_FACTOR = 3;
 
         if(this.isEasyMode){
@@ -945,7 +961,7 @@
                                 myDrum.myScoreboard.textColor = myDrum.myScoreboard.BEAT_HIGH_SCORE_TEXT_COLOR;
                             }
 
-                        } else {                                                    // Game over, did not beat high score
+                        } else {                                                    // Game over, **did not** beat high score
 
                             if (!myDrum.isEasyMode){
                                 myDrum.myScoreboard.screenType = 'current';
@@ -1165,6 +1181,19 @@
             }
 
         },
+        // General use function to check to see if the creator of an entity is also the Drum creator, avoids duplicates?
+        isDrumCreator: function(entityCreator){
+
+            var myDrumUserData = JSON.parse(Entities.getEntityProperties(myDrum.entityID, ["userData"]).userData);
+
+            if (entityCreator !== myDrumUserData.creatorUUID) {
+                print("NOT THE DRUM OWNER!");
+                return false;
+            } else {
+                print("YOU ARE THE DRUM OWNER!");
+                return true;
+            }
+        },
         // Preloads a pile of data for myDrum scope
         preload: function(entityID) {
 
@@ -1193,8 +1222,7 @@
                 stereo: false,
                 localOnly: true
             };
-            if (!myDrum.beatSound.downloaded){
-                print("*****"+myDrum.beatURL+" failed to download!******"); }
+            if (!myDrum.beatSound.downloaded){ print("*****"+myDrum.beatURL+" failed to download!******"); }
 
             // GameOver
             myDrum.gameOverURL = "http://theblacksun.s3.amazonaws.com/props/beatMatcher/GameOver.wav";
@@ -1207,11 +1235,15 @@
                 localOnly: true
 
             };
-            if (!myDrum.gameOverSound.downloaded){
-                print("*****"+myDrum.gameOverURL+" failed to download!******"); }
+            if (!myDrum.gameOverSound.downloaded){ print("*****"+myDrum.gameOverURL+" failed to download!******"); }
 
-            // make BeatMatcher Scoreboard parent entity
-            myDrum.myScoreboard = new Scoreboard(Vec3.sum(this.entityPosition,{x: 0, y: 0.250, z: -0.05}));
+
+            // Make sure object doesn't already exist to avoid local and other domain client entity duplicates
+            if(typeof myScoreboard == "undefined") {
+
+                // make BeatMatcher Scoreboard parent entity
+                myDrum.myScoreboard = new Scoreboard(Vec3.sum(this.entityPosition, {x: 0, y: 0.250, z: -0.05}));
+            }
 
             // Create object of text entities to be our new ScoreboardDisplay to display messages
             myDrum.myScoreboard.scoreboardDisplay = myDrum.myScoreboard.getNewScoreboardDisplay();
@@ -1228,10 +1260,16 @@
             myDrum.myScoreboard.deleteScoreboard();
 
             // De-register hand controller listener
-            Script.update.disconnect(this.checkForHandControllerDrumHit);
+            Script.update.disconnect(myDrum.checkForHandControllerDrumHit);
+
         }
     };
 
-    myDrum = new Drum();
+    // Make sure object doesn't already exist to avoid local client duplicates
+    // -- Developer's note: -- Oddly enough, if the 'game' hasn't started at least once and the user manually reloads
+    // their scripts, duplicates of this entire object and it's children are spawned each time
+    if(typeof myDrum == "undefined") {
+        myDrum = new Drum();
+    }
     return myDrum;
 });
