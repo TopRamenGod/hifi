@@ -840,6 +840,11 @@
             // :::: Check drum hit if already started ::::
             } else if (myDrum.hasBeatStarted && (myDrum.beatCounter > 0 && myDrum.beatsMissed <= myDrum.MISS_LIMIT)){
 
+                // Reset beatsMissed on isEasyMode to give perpetual play with timeout on MISS_LIMIT
+                if (myDrum.isEasyMode){
+                    myDrum.beatsMissed = 0;
+                }
+
                 // :::: Check if Drum hit is beat miss or match ::::
                 this.checkDrumHit();
             }
