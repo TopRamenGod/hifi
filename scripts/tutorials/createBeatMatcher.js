@@ -37,6 +37,8 @@
  * Developer's Note: the current text entity font is not fixed width, so it's kind of difficult to format lines with
  * precision, but this gets closer than nothing. :)
  *
+ * To cleanly delete the BeatMatcher 5000, simply delete the Drum entity. *
+ *
  *
  * Distributed under the Apache License, Version 2.0.
  * See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -63,21 +65,20 @@ var beatMatcherProperties = {
     userData: JSON.stringify({
         grabbableKey: {wantsTrigger: true}
     })
-}
+};
 
 // A BeatMatcher entity, use this to pass entityID
 var _beatMatcherEntity = Entities.addEntity(beatMatcherProperties);
 
 
 // Credit to Coal for inspiration on this one...
-setOwner = function(entityID) {
+var setOwner = function(entityID) {
     var userData = JSON.parse(Entities.getEntityProperties(entityID, ["userData"]).userData);
-    creatorUUID = MyAvatar.sessionUUID;
-    userData.creatorUUID = creatorUUID;
+    userData.creatorUUID = MyAvatar.sessionUUID;
     Entities.editEntity(entityID, {
         userData: JSON.stringify(userData)
     });
-}
+};
 
 // set 'owner' of the BeatMatcher, to avoid unnecessary duplication of child entities from other clients in the domain
 setOwner(_beatMatcherEntity);

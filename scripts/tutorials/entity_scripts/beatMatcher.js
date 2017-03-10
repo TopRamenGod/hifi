@@ -20,7 +20,7 @@
     var Scoreboard = function(position) {
 
         // For clearer scope
-        var theScoreboardObjThis = this;
+        var scoreboardObj = this;
 
         // Set the creator of the scoreboard to place in the userData
         var scoreboardCreator = MyAvatar.sessionUUID;
@@ -45,24 +45,24 @@
         if (myDrum.isDrumCreator(scoreboardCreator)){
 
             // The Scoreboard entity, use this to pass entityID
-            theScoreboardObjThis._scoreboardEntity = Entities.addEntity(scoreboardProperties);
+            scoreboardObj._scoreboardEntity = Entities.addEntity(scoreboardProperties);
 
         }
 
         // :: Scoreboard State Text Colors ::
-        theScoreboardObjThis.DEFAULT_TEXT_COLOR = {red: 255, green: 255, blue: 255};            // White
-        theScoreboardObjThis.UNCLICKED_BEAT_TEXT_COLOR = {red: 0, green: 0, blue: 255};         // Blue
-        theScoreboardObjThis.MATCHED_BEAT_TEXT_COLOR = {red: 212, green: 250, blue: 205};       // Light Green
-        theScoreboardObjThis.MISSED_BEAT_TEXT_COLOR = {red: 232, green: 190, blue: 160};        // Light Orange
-        theScoreboardObjThis.GREETING_TEXT_COLOR = {red: 0, green: 255, blue: 0};               // Green
-        theScoreboardObjThis.TITLE_TEXT_COLOR = {red: 247, green: 255, blue: 0};                // Yellow
-        theScoreboardObjThis.YEAR_TEXT_COLOR = {red: 79, green: 192, blue: 240};                // Sky Blue
-        theScoreboardObjThis.EASY_HIGH_SCORE_TEXT_COLOR = {red: 0, green: 128, blue: 0};        // Light Green
-        theScoreboardObjThis.BEAT_HIGH_SCORE_TEXT_COLOR = {red: 255, green: 128, blue: 0};      // Dark Orange
-        theScoreboardObjThis.SHOW_HIGH_SCORE_TEXT_COLOR = {red: 200, green: 128, blue: 100};    // Muted Dark Orange?
+        scoreboardObj.DEFAULT_TEXT_COLOR = {red: 255, green: 255, blue: 255};            // White
+        scoreboardObj.UNCLICKED_BEAT_TEXT_COLOR = {red: 0, green: 0, blue: 255};         // Blue
+        scoreboardObj.MATCHED_BEAT_TEXT_COLOR = {red: 212, green: 250, blue: 205};       // Light Green
+        scoreboardObj.MISSED_BEAT_TEXT_COLOR = {red: 232, green: 190, blue: 160};        // Light Orange
+        scoreboardObj.GREETING_TEXT_COLOR = {red: 0, green: 255, blue: 0};               // Green
+        scoreboardObj.TITLE_TEXT_COLOR = {red: 247, green: 255, blue: 0};                // Yellow
+        scoreboardObj.YEAR_TEXT_COLOR = {red: 79, green: 192, blue: 240};                // Sky Blue
+        scoreboardObj.EASY_HIGH_SCORE_TEXT_COLOR = {red: 0, green: 128, blue: 0};        // Light Green
+        scoreboardObj.BEAT_HIGH_SCORE_TEXT_COLOR = {red: 255, green: 128, blue: 0};      // Dark Orange
+        scoreboardObj.SHOW_HIGH_SCORE_TEXT_COLOR = {red: 200, green: 128, blue: 100};    // Muted Dark Orange?
 
         // :: Scoreboard messages ::
-        theScoreboardObjThis.scoreboardMatchResponseList = [
+        scoreboardObj.scoreboardMatchResponseList = [
             "Beat matched!",
             "Well done!",
             "Awesome!!!",
@@ -70,7 +70,7 @@
             "GREAT!",
             "Superb!"
         ];
-        theScoreboardObjThis.scoreboardMissResponseList = [
+        scoreboardObj.scoreboardMissResponseList = [
             "Beat missed :(",
             "NOPE",
             "fail.",
@@ -80,7 +80,7 @@
             "try again",
             "hmm..."
         ];
-        theScoreboardObjThis.scoreboardStrings = {
+        scoreboardObj.scoreboardStrings = {
             "BEATMATCHER_NAME": "BeatMatcher 5000",
             "EASY_MODE": "Easy mode!",
             "START_1": "Hit/click the",
@@ -110,18 +110,18 @@
         // Scoreboard Display Object Dimensions
         // Helps keep your lines the length that fit best given text entity dimensions and lineHeight
         /* TODO: find a programmatic way to define initial line length by text entity dimensions and lineHeight */
-        theScoreboardObjThis.REQUIRED_LINE_LENGTH = 22;
-        theScoreboardObjThis.NUM_DISPLAY_LINES = 8;
+        scoreboardObj.REQUIRED_LINE_LENGTH = 22;
+        scoreboardObj.NUM_DISPLAY_LINES = 8;
 
         // slightly offset ScoreboardLines from parent Scoreboard to avoid z-fighting
         // TODO: replace parent Scoreboard text entity with 'invisible' primitive entity of some kind?
-        theScoreboardObjThis.SCOREBOARDLINE_Z_POSITION_OFFSET = 0.015;
-        theScoreboardObjThis.SCOREBOARDLINE_Y_OFFSET = 0.02;
+        scoreboardObj.SCOREBOARDLINE_Z_POSITION_OFFSET = 0.015;
+        scoreboardObj.SCOREBOARDLINE_Y_OFFSET = 0.02;
 
-        theScoreboardObjThis.scoreboardLineEntityIdList = [];
+        scoreboardObj.scoreboardLineEntityIdList = [];
 
-        theScoreboardObjThis.screenType = "";
-        theScoreboardObjThis.textColor= {};
+        scoreboardObj.screenType = "";
+        scoreboardObj.textColor= {};
     };
 
     Scoreboard.prototype = {
@@ -343,7 +343,7 @@
                     textColor: myDrum.myScoreboard.YEAR_TEXT_COLOR
                 };
             }
-            
+
             return newScoreboardHighScoreDisplayLines;
         },
 
@@ -469,7 +469,6 @@
             } else if (type === 'easymissed') {
 
                 // Custom easy mode missed beat message can go here
-
             }
 
             return newScoreboardBeatDisplayLines;
@@ -511,6 +510,8 @@
             var initialBlue = 255;
 
             var newScoreboardLineTextColor = {};
+
+            var newScoreboardDisplay = [];
 
             // create NUM_DISPLAY_LINES ScoreboardLine text entities and associated empty lines for blank screen
             for (var i = 0; i < myDrum.myScoreboard.NUM_DISPLAY_LINES; i++){
@@ -556,36 +557,28 @@
 
                 newScoreboardLineTextColor = {red: initialRed, green: initialGreen, blue: initialBlue};
 
-                // Create new ScoreboardLine text entity and object and add new ScoreboardLine text Entity to world
-                new ScoreboardLine(
+                newScoreboardDisplay.push(new ScoreboardLine(
                     newScoreboardLinePosition,
                     newScoreboardLineName,
                     newScoreboardLineDimensions,
                     newScoreboardLineText,
                     newScoreboardLineTextColor
-                );
+                ));
             }
 
-            return myDrum.myScoreboard.scoreboardLineEntityIdList;
+            return newScoreboardDisplay;
 
         },
 
         // Takes in scoreboard display object and associated text lines and updates all ScoreboardLine text entities
         updateScoreboard: function(updatedScoreboardDisplayLines){
 
-            if (!updatedScoreboardDisplayLines){
-                print("No ScoreboardLine entity IDs provided! Cannot update non-existent entity!");
-            }
-
             // combine properties to their associated display line entities and update each one
             for (var i = 0; i < myDrum.myScoreboard.NUM_DISPLAY_LINES; i++) {
 
-                // print("Updating ScoreboardDisplayLine");
-                // print("text: " + updatedScoreboardDisplayLines[i.toString()].text);
-
                 // Update scoreboard text entity!
-                theScoreboardLineObjThis.setScoreboardDisplayLine(
-                    myDrum.myScoreboard.scoreboardDisplay[i.toString()],
+                myDrum.myScoreboard.scoreboardDisplay[i].setScoreboardDisplayLine(
+                    myDrum.myScoreboard.scoreboardLineEntityIdList[i.toString()],
                     {
                         text: updatedScoreboardDisplayLines[i.toString()].text,
                         textColor: updatedScoreboardDisplayLines[i.toString()].textColor}
@@ -596,14 +589,10 @@
         },
         getBlankPaddedLine: function(){
 
-            // print("get blank padded line!!!!!!");
-
-            var blankPaddedLine = myDrum.myScoreboard.repeatString(
-                   myDrum.myScoreboard.scoreboardStrings.LINE_PADDING,
-                   myDrum.myScoreboard.REQUIRED_LINE_LENGTH - 2
-               ) + "\n";
-
-            return blankPaddedLine;
+            return myDrum.myScoreboard.repeatString(
+                    myDrum.myScoreboard.scoreboardStrings.LINE_PADDING,
+                    myDrum.myScoreboard.REQUIRED_LINE_LENGTH - 2
+                ) + "\n";
         },
 
         // returns a string that has been repeated n times
@@ -675,8 +664,8 @@
             return line;
         },
         deleteScoreboardLines: function() {
-            for (var line in myDrum.myScoreboard.scoreboardDisplay){
-                Entities.deleteEntity(myDrum.myScoreboard.scoreboardDisplay[line]);
+            for (var line in myDrum.myScoreboard.scoreboardLineEntityIdList){
+                Entities.deleteEntity(myDrum.myScoreboard.scoreboardLineEntityIdList[line]);
             }
         },
 
@@ -687,9 +676,6 @@
     };
 
     var ScoreboardLine = function(position, name, dimensions, text, textColor) {
-
-        // For clearer scope
-        theScoreboardLineObjThis = this;
 
         // get creator of ScoreboardLine to compare against creator of Drum to avoid duplicates from other clients in the domain
         var scoreboardLineCreator = MyAvatar.sessionUUID;
@@ -737,7 +723,7 @@
     var Drum = function() {
 
         // For clearer understanding of scoping
-        var theDrumObjThis = this;
+        var drumObj = this;
 
         // :: Drum State Colors ::
         this.UNCLICKED_COLOR = {color: {red: 0, green: 0, blue: 255}};      // Blue
@@ -745,9 +731,9 @@
         this.MISS_COLOR = {color: {red: 255, green: 128, blue: 0}};         // Dark Orange
 
         // ::: Mouse Click Operation :::
-        this.clickDownOnEntity = function(entityID, mouseEvent){
-            if (Entities.getEntityProperties(theDrumObjThis.entityID).name === "BeatMatcher_Drum") {
-                theDrumObjThis.hitDrum();
+        this.clickDownOnEntity = function () {
+            if (Entities.getEntityProperties(drumObj.entityID).name === "BeatMatcher_Drum") {
+                drumObj.hitDrum();
             }
         };
 
@@ -756,17 +742,17 @@
         // ::: Hand Controller Operation :::
         this.checkForHandControllerDrumHit = function(){
 
-            var drumRadius = Entities.getEntityProperties(theDrumObjThis.entityID).dimensions.x / 2;
+            var drumRadius = Entities.getEntityProperties(drumObj.entityID).dimensions.x / 2;
 
             // hand controller distance to drum
             var rightHandDistanceToDrum = Vec3.distance(MyAvatar.getJointPosition("RightHandIndex4"),
-                Entities.getEntityProperties(theDrumObjThis.entityID).position);
+                Entities.getEntityProperties(drumObj.entityID).position);
             var leftHandDistanceToDrum = Vec3.distance(MyAvatar.getJointPosition("LeftHandIndex4"),
-                Entities.getEntityProperties(theDrumObjThis.entityID).position);
+                Entities.getEntityProperties(drumObj.entityID).position);
 
             if (!handInRadius && (rightHandDistanceToDrum <= drumRadius || leftHandDistanceToDrum <= drumRadius)) {
                 handInRadius = true;
-                theDrumObjThis.hitDrum();
+                drumObj.hitDrum();
             }
 
             // hysteresis to avoid 'bouncing' detection
@@ -796,8 +782,8 @@
 
         // Update high score if high score beaten
         this.checkUpdateHighScore = function(currentScore){
-            if (currentScore > theDrumObjThis.highScore){
-                theDrumObjThis.highScore = currentScore;
+            if (currentScore > drumObj.highScore){
+                drumObj.highScore = currentScore;
                 return true;
             } else {
                 return false;
@@ -841,8 +827,6 @@
 
         hitDrum: function(){
 
-            // print("XXXX HIT DRUM XXXX");
-
             // :::: Start beat ::::
             if (!myDrum.hasBeatStarted && myDrum.beatCounter <= 0) {
 
@@ -862,12 +846,9 @@
         },
         startBeat: function() {     // most of the active game logic happens here
 
-            // print("++++STARTING BEAT++++");
-
             // Reset matches and misses
             myDrum.beatsMatched = 0;
             myDrum.beatsMissed = 0;
-
 
             // heartBeat interval for checking to see if the right amount of time has passed for a beat to occur
             myDrum.beatIntervalID = Script.setInterval(function () {
@@ -978,19 +959,15 @@
         // :::: Stop Beat ::::
         stopBeat: function() {
 
-            // print("-----STOPPING BEAT-----");
-
             // Play Game Over sound!
             myDrum.soundInjector = Audio.playSound(
                 myDrum.gameOverSound, myDrum.gameOverSoundOptions);
 
             // Default to easy mode for Greeting screen
             myDrum.myScoreboard.screenType = 'easy';
-            // myDrum.myScoreboard.textColor = myDrum.myScoreboard.GREETING_TEXT_COLOR; // TODO: Create easy greeting text color
 
             if (!myDrum.isEasyMode) {
                 myDrum.myScoreboard.screenType = 'normal';
-                // myDrum.myScoreboard.textColor = myDrum.myScoreboard.GREETING_TEXT_COLOR;
             }
 
             // Update scoreboard display
@@ -1020,8 +997,6 @@
         },
         // Check Drum hit
         checkDrumHit: function(){
-
-            // print("|||| CHECKING DRUM HIT ||||");
 
             myDrum.beatAttempted = true;
             myDrum.timeAtStartOfHit = new Date();
@@ -1062,8 +1037,6 @@
         },
         matchBeat: function(){
 
-            // print("OOOO MATCHED BEAT 0000");
-
             myDrum.beatsMatched++;
 
             // pulse color to theDrumObjthis.match Green on match
@@ -1075,7 +1048,6 @@
 
             if (!myDrum.isEasyMode) {
                 myDrum.myScoreboard.screenType = 'matched';
-                // myDrum.myScoreboard.textColor = myDrum.myScoreboard.UNCLICKED_TEXT_COLOR;
             }
 
             // Update scoreboard display - unclicked beat
@@ -1086,8 +1058,6 @@
 
         },
         missBeat: function(){
-
-            // print("QQQQQQQQQ MMISSED BEAT QQQQQQQQ");
 
             myDrum.beatsMissed++;
 
@@ -1100,7 +1070,6 @@
 
             if (!myDrum.isEasyMode) {
                 myDrum.myScoreboard.screenType = 'missed';
-                // myDrum.myScoreboard.textColor = myDrum.myScoreboard.MISSED_BEAT_TEXT_COLOR;
             }
 
             // Update scoreboard display - unclicked beat
@@ -1124,13 +1093,7 @@
 
             var myDrumUserData = JSON.parse(Entities.getEntityProperties(myDrum.entityID, ["userData"]).userData);
 
-            if (entityCreator !== myDrumUserData.creatorUUID) {
-                print("NOT THE DRUM OWNER!");
-                return false;
-            } else {
-                print("YOU ARE THE DRUM OWNER! asdojklfnadslkjnfd");
-                return true;
-            }
+            return entityCreator === myDrumUserData.creatorUUID;
         },
         // Preloads a pile of data for myDrum scope
         preload: function(entityID) {
@@ -1160,9 +1123,6 @@
                 stereo: false,
                 localOnly: true
             };
-            if (!myDrum.beatSound.downloaded){
-                print("*****"+myDrum.beatURL+" failed to download!******");
-            }
 
             // GameOver
             myDrum.gameOverURL = "http://theblacksun.s3.amazonaws.com/props/beatMatcher/GameOver.wav";
@@ -1175,9 +1135,6 @@
                 localOnly: true
 
             };
-            if (!myDrum.gameOverSound.downloaded){
-                print("*****"+myDrum.gameOverURL+" failed to download!******");
-            }
 
             // make BeatMatcher Scoreboard parent entity
             myDrum.myScoreboard = new Scoreboard(Vec3.sum(this.entityPosition, {x: 0, y: 0.250, z: -0.05}));
