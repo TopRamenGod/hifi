@@ -47,13 +47,12 @@
 
 (function() {
 
-    theBeatMatcherObjThis = this;
 
     // Displays accuracy, score, and various messages
     var Scoreboard = function(position) {
 
         // For clearer scope
-        theScoreboardObjThis = this;
+        var theScoreboardObjThis = this;
 
         // Set the creator of the scoreboard to place in the userData
         var scoreboardCreator = MyAvatar.sessionUUID;
@@ -134,7 +133,6 @@
             "FOOTER_PADDING": "=",
             "BORDER_ENDS": "|",
             "LINE_PADDING": " ",
-            // "LINE_PADDING": "+",        // test character for alignment. Semi-reliable.
             "LAST_BEAT_ERROR": "Last hit offset: ",
             "AVERAGE_ERROR": "Avg. offset: ",
             "YEAR_LINE": "2017 High Fidelity",
@@ -162,12 +160,12 @@
 
         // returns a pre-formatted scoreboard title and screen border line
         getScoreboardBorder: function(){
-            return theScoreboardObjThis.scoreboardStrings.BORDER_ENDS +
-                theScoreboardObjThis.repeatString(
-                    theScoreboardObjThis.scoreboardStrings.HEADER_PADDING,
-                    theScoreboardObjThis.REQUIRED_LINE_LENGTH-3
+            return myDrum.myScoreboard.scoreboardStrings.BORDER_ENDS +
+                myDrum.myScoreboard.repeatString(
+                    myDrum.myScoreboard.scoreboardStrings.HEADER_PADDING,
+                    myDrum.myScoreboard.REQUIRED_LINE_LENGTH-3
                 ) +
-                theScoreboardObjThis.scoreboardStrings.BORDER_ENDS
+                myDrum.myScoreboard.scoreboardStrings.BORDER_ENDS
         },
 
 
@@ -180,7 +178,7 @@
             }
 
             // start with pile of  blank text entity properties
-            newScoreboardGreetingLines = this.getRefreshedScoreboardDisplayLineTextProperties();
+            var newScoreboardGreetingLines = this.getRefreshedScoreboardDisplayLineTextProperties();
 
             // Title Header
             newScoreboardGreetingLines["0"] = {
@@ -189,7 +187,7 @@
             };
 
             newScoreboardGreetingLines["1"] = {
-                text: theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.BEATMATCHER_NAME, "center"),
+                text: myDrum.myScoreboard.justifyLine(myDrum.myScoreboard.scoreboardStrings.BEATMATCHER_NAME, "center"),
                 textColor: myDrum.myScoreboard.TITLE_TEXT_COLOR
             };
 
@@ -202,12 +200,12 @@
             if (type == 'normal') {
 
                 newScoreboardGreetingLines["4"] = {
-                    text: theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.START_1, "left"),
+                    text: myDrum.myScoreboard.justifyLine(myDrum.myScoreboard.scoreboardStrings.START_1, "left"),
                     textColor: myDrum.myScoreboard.UNCLICKED_BEAT_TEXT_COLOR
                 };
 
                 newScoreboardGreetingLines["5"]= {
-                    text: theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.START_2, "right"),
+                    text: myDrum.myScoreboard.justifyLine(myDrum.myScoreboard.scoreboardStrings.START_2, "right"),
                     textColor: myDrum.myScoreboard.UNCLICKED_BEAT_TEXT_COLOR
                 };
 
@@ -216,17 +214,17 @@
             else if (type == 'easy'){
 
                 newScoreboardGreetingLines["3"] = {
-                    text: theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.EASY_MODE, "center"),
+                    text: myDrum.myScoreboard.justifyLine(myDrum.myScoreboard.scoreboardStrings.EASY_MODE, "center"),
                     textColor: myDrum.myScoreboard.EASY_HIGH_SCORE_TEXT_COLOR
                 };
 
                 newScoreboardGreetingLines["4"] = {
-                    text: theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.START_1, "left"),
+                    text: myDrum.myScoreboard.justifyLine(myDrum.myScoreboard.scoreboardStrings.START_1, "left"),
                     textColor: myDrum.myScoreboard.SHOW_HIGH_SCORE_TEXT_COLOR
                 };
 
                 newScoreboardGreetingLines["5"] = {
-                    text: theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.START_2, "right"),
+                    text: myDrum.myScoreboard.justifyLine(myDrum.myScoreboard.scoreboardStrings.START_2, "right"),
                     textColor: myDrum.myScoreboard.SHOW_HIGH_SCORE_TEXT_COLOR
                 };
 
@@ -234,7 +232,7 @@
 
             // Title Footer
             newScoreboardGreetingLines["7"] = {
-                text: theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.YEAR_LINE, "center"),
+                text: myDrum.myScoreboard.justifyLine(myDrum.myScoreboard.scoreboardStrings.YEAR_LINE, "center"),
                 textColor: myDrum.myScoreboard.YEAR_TEXT_COLOR
             };
 
@@ -245,16 +243,16 @@
         getScoreboardHighScore: function(type){
 
             // start with pile of  blank text entity properties
-            newScoreboardHighScoreDisplayLines = this.getRefreshedScoreboardDisplayLineTextProperties();
+            var newScoreboardHighScoreDisplayLines = this.getRefreshedScoreboardDisplayLineTextProperties();
 
             // These lines always display on the high score screen
             newScoreboardHighScoreDisplayLines["0"] = {
                 text: this.getScoreboardBorder(),
-                textColor: theScoreboardObjThis.YEAR_TEXT_COLOR
+                textColor: myDrum.myScoreboard.YEAR_TEXT_COLOR
             };
             newScoreboardHighScoreDisplayLines["7"] = {
                 text: this.getScoreboardBorder(),
-                textColor: theScoreboardObjThis.YEAR_TEXT_COLOR
+                textColor: myDrum.myScoreboard.YEAR_TEXT_COLOR
             };
 
             // Build new scoreboard display - Game over, beat high score
@@ -262,14 +260,14 @@
 
                 newScoreboardHighScoreDisplayLines["1"] = {
                     text:
-                        theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.NEW_HIGH_SCORE, "center"),
+                        myDrum.myScoreboard.justifyLine(myDrum.myScoreboard.scoreboardStrings.NEW_HIGH_SCORE, "center"),
                     textColor: myDrum.myScoreboard.BEAT_HIGH_SCORE_TEXT_COLOR
                 };
 
                 newScoreboardHighScoreDisplayLines["2"] = {
                     text:
-                        theScoreboardObjThis.justifyLine(
-                            myDrum.highScore + theScoreboardObjThis.scoreboardStrings.MATCHES_EXCL,
+                        myDrum.myScoreboard.justifyLine(
+                            myDrum.highScore + myDrum.myScoreboard.scoreboardStrings.MATCHES_EXCL,
                             "center"
                         ),
                     textColor: myDrum.myScoreboard.BEAT_HIGH_SCORE_TEXT_COLOR
@@ -277,9 +275,9 @@
 
                 newScoreboardHighScoreDisplayLines["3"] = {
                     text:
-                        theScoreboardObjThis.justifyLine(
-                            theScoreboardObjThis.scoreboardStrings.LAST_BEAT_ERROR +
-                            theDrumObjThis.offset,
+                        myDrum.myScoreboard.justifyLine(
+                            myDrum.myScoreboard.scoreboardStrings.LAST_BEAT_ERROR +
+                            myDrum.offset,
                             "center"
                         ),
                     textColor: myDrum.myScoreboard.BEAT_HIGH_SCORE_TEXT_COLOR
@@ -287,10 +285,10 @@
 
                 newScoreboardHighScoreDisplayLines["4"] = {
                     text:
-                        theScoreboardObjThis.justifyLine(
-                            theScoreboardObjThis.scoreboardStrings.AVERAGE_ERROR +
-                            Math.round(theDrumObjThis.averageError, 1) + " " +
-                            theScoreboardObjThis.scoreboardStrings.TIME_SCALE,
+                        myDrum.myScoreboard.justifyLine(
+                            myDrum.myScoreboard.scoreboardStrings.AVERAGE_ERROR +
+                            Math.round(myDrum.averageError, 1) + " " +
+                            myDrum.myScoreboard.scoreboardStrings.TIME_SCALE,
                             "center"
                         ),
                     textColor: myDrum.myScoreboard.BEAT_HIGH_SCORE_TEXT_COLOR
@@ -298,7 +296,7 @@
 
                 newScoreboardHighScoreDisplayLines["6"] = {
                     text:
-                        theScoreboardObjThis.justifyLine(theScoreboardObjThis.scoreboardStrings.GAME_OVER, "center"),
+                        myDrum.myScoreboard.justifyLine(myDrum.myScoreboard.scoreboardStrings.GAME_OVER, "center"),
                     textColor: myDrum.myScoreboard.GREETING_TEXT_COLOR
                 };
 
@@ -309,8 +307,8 @@
 
                 newScoreboardHighScoreDisplayLines["1"] = {
                     text:
-                        theScoreboardObjThis.justifyLine(
-                            theScoreboardObjThis.scoreboardStrings.GAME_OVER,
+                        myDrum.myScoreboard.justifyLine(
+                            myDrum.myScoreboard.scoreboardStrings.GAME_OVER,
                             "center"
                         ),
                     textColor: myDrum.myScoreboard.GREETING_TEXT_COLOR
@@ -318,10 +316,10 @@
 
                 newScoreboardHighScoreDisplayLines["2"] = {
                     text:
-                        theScoreboardObjThis.justifyLine(
-                            theScoreboardObjThis.scoreboardStrings.HIGH_SCORE +
+                        myDrum.myScoreboard.justifyLine(
+                            myDrum.myScoreboard.scoreboardStrings.HIGH_SCORE +
                             myDrum.highScore +
-                            theScoreboardObjThis.scoreboardStrings.MATCHES,
+                            myDrum.myScoreboard.scoreboardStrings.MATCHES,
                             "center"
                         ),
                     textColor: myDrum.myScoreboard.SHOW_HIGH_SCORE_TEXT_COLOR
@@ -329,9 +327,9 @@
 
                 newScoreboardHighScoreDisplayLines["4"] = {
                     text:
-                        theScoreboardObjThis.justifyLine(
-                            theScoreboardObjThis.scoreboardStrings.LAST_BEAT_ERROR +
-                            theDrumObjThis.offset,
+                        myDrum.myScoreboard.justifyLine(
+                            myDrum.myScoreboard.scoreboardStrings.LAST_BEAT_ERROR +
+                            myDrum.offset,
                             "left"
                         ),
                     textColor: myDrum.myScoreboard.SHOW_HIGH_SCORE_TEXT_COLOR
@@ -339,10 +337,10 @@
 
                 newScoreboardHighScoreDisplayLines["5"] = {
                     text:
-                        theScoreboardObjThis.justifyLine(
-                            theScoreboardObjThis.scoreboardStrings.AVERAGE_ERROR +
-                            Math.round(theDrumObjThis.averageError,1) + " " +
-                            theScoreboardObjThis.scoreboardStrings.TIME_SCALE,
+                        myDrum.myScoreboard.justifyLine(
+                            myDrum.myScoreboard.scoreboardStrings.AVERAGE_ERROR +
+                            Math.round(myDrum.averageError,1) + " " +
+                            myDrum.myScoreboard.scoreboardStrings.TIME_SCALE,
                             "center"
                         ),
                     textColor: myDrum.myScoreboard.SHOW_HIGH_SCORE_TEXT_COLOR
@@ -354,8 +352,8 @@
 
                 newScoreboardHighScoreDisplayLines["1"] = {
                     text:
-                        theScoreboardObjThis.justifyLine(
-                            theScoreboardObjThis.scoreboardStrings.EASY_GAME_OVER,
+                        myDrum.myScoreboard.justifyLine(
+                            myDrum.myScoreboard.scoreboardStrings.EASY_GAME_OVER,
                             "center"
                         ),
                     textColor: myDrum.myScoreboard.YEAR_TEXT_COLOR
@@ -363,9 +361,9 @@
 
                 newScoreboardHighScoreDisplayLines["4"] = {
                     text:
-                        theScoreboardObjThis.justifyLine(
-                            theScoreboardObjThis.scoreboardStrings.LAST_BEAT_ERROR +
-                            theDrumObjThis.offset,
+                        myDrum.myScoreboard.justifyLine(
+                            myDrum.myScoreboard.scoreboardStrings.LAST_BEAT_ERROR +
+                            myDrum.offset,
                             "left"
                         ),
                     textColor: myDrum.myScoreboard.YEAR_TEXT_COLOR
@@ -373,10 +371,10 @@
 
                 newScoreboardHighScoreDisplayLines["5"] = {
                     text:
-                        theScoreboardObjThis.justifyLine(
-                            theScoreboardObjThis.scoreboardStrings.AVERAGE_ERROR +
-                            Math.round(theDrumObjThis.averageError,1) + " " +
-                            theScoreboardObjThis.scoreboardStrings.TIME_SCALE,
+                        myDrum.myScoreboard.justifyLine(
+                            myDrum.myScoreboard.scoreboardStrings.AVERAGE_ERROR +
+                            Math.round(myDrum.averageError,1) + " " +
+                            myDrum.myScoreboard.scoreboardStrings.TIME_SCALE,
                             "center"
                         ),
                     textColor: myDrum.myScoreboard.YEAR_TEXT_COLOR
@@ -389,13 +387,13 @@
         // returns a prepared scoreboard display object template of a scoreboard beat screen
         getScoreboardBeat: function(type){
 
-            newScoreboardBeatDisplayLines = this.getRefreshedScoreboardDisplayLineTextProperties();
+            var newScoreboardBeatDisplayLines = this.getRefreshedScoreboardDisplayLineTextProperties();
 
             // These lines always display in the beat screen
             newScoreboardBeatDisplayLines["0"] = {
                 text:
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.BEATS_PLAYED + myDrum.beatCounter,
+                    myDrum.myScoreboard.justifyLine(
+                        myDrum.myScoreboard.scoreboardStrings.BEATS_PLAYED + myDrum.beatCounter,
                         "center"
                     ),
                 textColor: myDrum.myScoreboard.YEAR_TEXT_COLOR
@@ -403,9 +401,9 @@
 
             newScoreboardBeatDisplayLines["5"] = {
                 text:
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.LAST_BEAT_ERROR +
-                        theDrumObjThis.offset,
+                    myDrum.myScoreboard.justifyLine(
+                        myDrum.myScoreboard.scoreboardStrings.LAST_BEAT_ERROR +
+                        myDrum.offset,
                         "center"
                     ),
                 textColor: myDrum.myScoreboard.DEFAULT_TEXT_COLOR
@@ -413,10 +411,10 @@
 
             newScoreboardBeatDisplayLines["6"] = {
                 text:
-                    theScoreboardObjThis.justifyLine(
-                        theScoreboardObjThis.scoreboardStrings.AVERAGE_ERROR +
-                        Math.round(theDrumObjThis.averageError,1) + " " +
-                        theScoreboardObjThis.scoreboardStrings.TIME_SCALE,
+                    myDrum.myScoreboard.justifyLine(
+                        myDrum.myScoreboard.scoreboardStrings.AVERAGE_ERROR +
+                        Math.round(myDrum.averageError,1) + " " +
+                        myDrum.myScoreboard.scoreboardStrings.TIME_SCALE,
                         "center"
                     ),
                 textColor: myDrum.myScoreboard.DEFAULT_TEXT_COLOR
@@ -428,9 +426,9 @@
                 // display random match scoreboard message
                 newScoreboardBeatDisplayLines["1"] = {
                     text:
-                        theScoreboardObjThis.justifyLine(
-                            theScoreboardObjThis.scoreboardMatchResponseList[
-                                myDrum.getRandomInt(0, theScoreboardObjThis.scoreboardMatchResponseList.length -1)],
+                        myDrum.myScoreboard.justifyLine(
+                            myDrum.myScoreboard.scoreboardMatchResponseList[
+                                myDrum.getRandomInt(0, myDrum.myScoreboard.scoreboardMatchResponseList.length -1)],
                             "center"
                         ),
                     textColor: myDrum.myScoreboard.EASY_HIGH_SCORE_TEXT_COLOR
@@ -438,16 +436,16 @@
 
                 newScoreboardBeatDisplayLines["2"] = {
                     text:
-                        theScoreboardObjThis.justifyLine(
-                            theScoreboardObjThis.scoreboardStrings.BEATS_MATCHED + myDrum.beatsMatched, "center"
+                        myDrum.myScoreboard.justifyLine(
+                            myDrum.myScoreboard.scoreboardStrings.BEATS_MATCHED + myDrum.beatsMatched, "center"
                         ),
                     textColor: myDrum.myScoreboard.GREETING_TEXT_COLOR
                 };
 
                 newScoreboardBeatDisplayLines["3"] = {
                     text:
-                        theScoreboardObjThis.justifyLine(
-                            theScoreboardObjThis.scoreboardStrings.BEATS_MISSED + myDrum.beatsMissed, "center"
+                        myDrum.myScoreboard.justifyLine(
+                            myDrum.myScoreboard.scoreboardStrings.BEATS_MISSED + myDrum.beatsMissed, "center"
                         ),
                     textColor: myDrum.myScoreboard.MISSED_BEAT_TEXT_COLOR
                 };
@@ -458,24 +456,24 @@
 
                 newScoreboardBeatDisplayLines["2"] = {
                     text:
-                        theScoreboardObjThis.justifyLine(
-                            theScoreboardObjThis.scoreboardStrings.BEATS_MATCHED + myDrum.beatsMatched, "center"),
+                        myDrum.myScoreboard.justifyLine(
+                            myDrum.myScoreboard.scoreboardStrings.BEATS_MATCHED + myDrum.beatsMatched, "center"),
                     textColor: myDrum.myScoreboard.MATCHED_BEAT_TEXT_COLOR
                 };
 
                 newScoreboardBeatDisplayLines["3"] = {
                     text:
-                        theScoreboardObjThis.justifyLine(
-                            theScoreboardObjThis.scoreboardStrings.BEATS_MISSED + myDrum.beatsMissed, "center"),
+                        myDrum.myScoreboard.justifyLine(
+                            myDrum.myScoreboard.scoreboardStrings.BEATS_MISSED + myDrum.beatsMissed, "center"),
                     textColor: myDrum.myScoreboard.BEAT_HIGH_SCORE_TEXT_COLOR
                 };
 
                 // display random miss scoreboard message
                 newScoreboardBeatDisplayLines["4"] = {
                     text:
-                        theScoreboardObjThis.justifyLine(
-                            theScoreboardObjThis.scoreboardMissResponseList[
-                                myDrum.getRandomInt(0, theScoreboardObjThis.scoreboardMissResponseList.length - 1)],
+                        myDrum.myScoreboard.justifyLine(
+                            myDrum.myScoreboard.scoreboardMissResponseList[
+                                myDrum.getRandomInt(0, myDrum.myScoreboard.scoreboardMissResponseList.length - 1)],
                             "center"
                         ),
                     textColor: myDrum.myScoreboard.TITLE_TEXT_COLOR
@@ -487,8 +485,8 @@
 
                 newScoreboardBeatDisplayLines["2"] = {
                     text:
-                        theScoreboardObjThis.justifyLine(
-                            theScoreboardObjThis.scoreboardStrings.BEATS_MATCHED + myDrum.beatsMatched,
+                        myDrum.myScoreboard.justifyLine(
+                            myDrum.myScoreboard.scoreboardStrings.BEATS_MATCHED + myDrum.beatsMatched,
                             "center"
                         ),
                     textColor: myDrum.myScoreboard.UNCLICKED_BEAT_TEXT_COLOR
@@ -496,8 +494,8 @@
 
                 newScoreboardBeatDisplayLines["3"] = {
                     text:
-                        theScoreboardObjThis.justifyLine(
-                            theScoreboardObjThis.scoreboardStrings.BEATS_MISSED + myDrum.beatsMissed,
+                        myDrum.myScoreboard.justifyLine(
+                            myDrum.myScoreboard.scoreboardStrings.BEATS_MISSED + myDrum.beatsMissed,
                             "center"
                         ),
                     textColor: myDrum.myScoreboard.UNCLICKED_BEAT_TEXT_COLOR
@@ -524,20 +522,20 @@
 
             var refreshedScoreboardDisplayLineTextProperties = {};
 
-            newScoreboardLineText = theScoreboardObjThis.getBlankPaddedLine();
+            newScoreboardLineText = myDrum.myScoreboard.getBlankPaddedLine();
 
             newScoreboardLineTextColor = myDrum.myScoreboard.DEFAULT_TEXT_COLOR;
 
             // create NUM_DISPLAY_LINES blank padded lines for blank screen
-            for(i=0; i < theScoreboardObjThis.NUM_DISPLAY_LINES; i++) {
+            for(i=0; i < myDrum.myScoreboard.NUM_DISPLAY_LINES; i++) {
 
                 // add blank padded line
                 refreshedScoreboardDisplayLineTextProperties[i.toString()] = {
                     text: this.getBlankPaddedLine(),
                     textColor: {
-                        red: theScoreboardObjThis.DEFAULT_TEXT_COLOR.red,
-                        green: theScoreboardObjThis.DEFAULT_TEXT_COLOR.green,
-                        blue: theScoreboardObjThis.DEFAULT_TEXT_COLOR.blue
+                        red: myDrum.myScoreboard.DEFAULT_TEXT_COLOR.red,
+                        green: myDrum.myScoreboard.DEFAULT_TEXT_COLOR.green,
+                        blue: myDrum.myScoreboard.DEFAULT_TEXT_COLOR.blue
                     }
                 };
 
@@ -561,7 +559,7 @@
             var newScoreboardLineTextColor = {};
 
             // create NUM_DISPLAY_LINES ScoreboardLine text entities and associated empty lines for blank screen
-            for(i=0; i < theScoreboardObjThis.NUM_DISPLAY_LINES; i++){
+            for(i=0; i < myDrum.myScoreboard.NUM_DISPLAY_LINES; i++){
 
                 var newScoreboardLineName = "BeatMatcher_Scoreboard_Line";
 
@@ -575,11 +573,11 @@
                         (
                             i *
                             (Entities.getEntityProperties(myDrum.myScoreboard._scoreboardEntity).dimensions.y /
-                            theScoreboardObjThis.NUM_DISPLAY_LINES)
-                        ) + (theScoreboardObjThis.SCOREBOARDLINE_Y_OFFSET * (theScoreboardObjThis.NUM_DISPLAY_LINES + 2)),
+                            myDrum.myScoreboard.NUM_DISPLAY_LINES)
+                        ) + (myDrum.myScoreboard.SCOREBOARDLINE_Y_OFFSET * (myDrum.myScoreboard.NUM_DISPLAY_LINES + 2)),
                         // ),
                     z: Entities.getEntityProperties(myDrum.myScoreboard._scoreboardEntity).position.z +
-                        theScoreboardObjThis.SCOREBOARDLINE_Z_POSITION_OFFSET
+                        myDrum.myScoreboard.SCOREBOARDLINE_Z_POSITION_OFFSET
                 };
 
                 // give new ScoreboardLine's text entity a unique name to see more easily in the Entity List
@@ -590,7 +588,7 @@
 
                     // get new ScoreboardLine height from proportional division of Scoreboard height
                     y: (Entities.getEntityProperties(myDrum.myScoreboard._scoreboardEntity).dimensions.y /
-                        theScoreboardObjThis.NUM_DISPLAY_LINES) + theScoreboardObjThis.SCOREBOARDLINE_Y_OFFSET,
+                        myDrum.myScoreboard.NUM_DISPLAY_LINES) + myDrum.myScoreboard.SCOREBOARDLINE_Y_OFFSET,
                     z: Entities.getEntityProperties(myDrum.myScoreboard._scoreboardEntity).dimensions.z
                 };
 
@@ -614,7 +612,7 @@
                 );
             }
 
-            return theScoreboardObjThis.scoreboardLineEntityIdList;
+            return myDrum.myScoreboard.scoreboardLineEntityIdList;
 
         },
 
@@ -626,7 +624,7 @@
             }
 
             // combine properties to their associated display line entities and update each one
-            for(i=0; i < theScoreboardObjThis.NUM_DISPLAY_LINES; i++) {
+            for(i=0; i < myDrum.myScoreboard.NUM_DISPLAY_LINES; i++) {
 
                 // print("Updating ScoreboardDisplayLine");
                 // print("text: " + updatedScoreboardDisplayLines[i.toString()].text);
@@ -646,9 +644,9 @@
 
             // print("get blank padded line!!!!!!");
 
-            var blankPaddedLine = theScoreboardObjThis.repeatString(
-                   theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
-                   theScoreboardObjThis.REQUIRED_LINE_LENGTH - 2
+            var blankPaddedLine = myDrum.myScoreboard.repeatString(
+                   myDrum.myScoreboard.scoreboardStrings.LINE_PADDING,
+                   myDrum.myScoreboard.REQUIRED_LINE_LENGTH - 2
                ) + "\n";
 
             return blankPaddedLine;
@@ -665,10 +663,10 @@
         justifyLine: function(line, justification){
 
             // Pad or truncate to guarantee display "line" length.
-            if(line.length < theScoreboardObjThis.REQUIRED_LINE_LENGTH -1){             // pad line if too short
+            if(line.length < myDrum.myScoreboard.REQUIRED_LINE_LENGTH -1){             // pad line if too short
 
                 // get length of padding
-                lineEditLength = theScoreboardObjThis.REQUIRED_LINE_LENGTH - line.length;
+                var lineEditLength = myDrum.myScoreboard.REQUIRED_LINE_LENGTH - line.length;
 
                 // Center justify line with LINE_PADDING string
                 if(justification == "center") {
@@ -677,13 +675,13 @@
 
                     // add SIDE padding to left and right sides of line, with return character
                     line =
-                        theScoreboardObjThis.repeatString(
-                            theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                        myDrum.myScoreboard.repeatString(
+                            myDrum.myScoreboard.scoreboardStrings.LINE_PADDING,
                             Math.floor(lineEditLength / 2) + 3
                         ) +
                         line +
-                        theScoreboardObjThis.repeatString(
-                            theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                        myDrum.myScoreboard.repeatString(
+                            myDrum.myScoreboard.scoreboardStrings.LINE_PADDING,
                             Math.floor(lineEditLength / 2) + 2
                         ) + "\n";
                 }
@@ -694,15 +692,11 @@
                     // print("right");
 
                     // get length of padding
-                    lineEditLength = theScoreboardObjThis.REQUIRED_LINE_LENGTH - line.length;
-
-                    // get start point of padding
-                    lineEditStartIndex = Math.abs(
-                        line.length - theScoreboardObjThis.REQUIRED_LINE_LENGTH);
+                    lineEditLength = myDrum.myScoreboard.REQUIRED_LINE_LENGTH - line.length;
 
                     // add padding to LEFT side of line, with return character
-                    line = theScoreboardObjThis.repeatString(
-                            theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                    line = myDrum.myScoreboard.repeatString(
+                            myDrum.myScoreboard.scoreboardStrings.LINE_PADDING,
                             lineEditLength  + 3
                         ) + line + "\n";
                 }
@@ -713,44 +707,40 @@
                     // print("left");
 
                     // get length of padding
-                    lineEditLength = theScoreboardObjThis.REQUIRED_LINE_LENGTH - line.length;
-
-                    // get start point of padding
-                    lineEditStartIndex = Math.abs(
-                        line.length - theScoreboardObjThis.REQUIRED_LINE_LENGTH);
+                    lineEditLength = myDrum.myScoreboard.REQUIRED_LINE_LENGTH - line.length;
 
                     // add padding to RIGHT side of line, with return character
                     line = line +
-                        theScoreboardObjThis.repeatString(
-                            theScoreboardObjThis.scoreboardStrings.LINE_PADDING,
+                        myDrum.myScoreboard.repeatString(
+                            myDrum.myScoreboard.scoreboardStrings.LINE_PADDING,
                             lineEditLength  + 3
                         ) +  "\n";
                 }
 
-            } else if (line > theScoreboardObjThis.REQUIRED_LINE_LENGTH -1) {           // truncate line if too long
+            } else if (line > myDrum.myScoreboard.REQUIRED_LINE_LENGTH -1) {           // truncate line if too long
 
                 // print("truncate");
 
                 // get newly truncated line
                 line = line.substring(
-                        0, theScoreboardObjThis.REQUIRED_LINE_LENGTH) + "\n";
+                        0, myDrum.myScoreboard.REQUIRED_LINE_LENGTH) + "\n";
             }
 
             return line;
         },
         deleteScoreboardLines: function() {
-            for(line in theScoreboardObjThis.scoreboardDisplay){
-                Entities.deleteEntity(theScoreboardObjThis.scoreboardDisplay[line]);
+            for(line in myDrum.myScoreboard.scoreboardDisplay){
+                Entities.deleteEntity(myDrum.myScoreboard.scoreboardDisplay[line]);
             }
         },
 
         deleteScoreboard: function() {
-            Entities.deleteEntity(theScoreboardObjThis._scoreboardEntity);
+            Entities.deleteEntity(myDrum.myScoreboard._scoreboardEntity);
         },
 
     };
 
-    ScoreboardLine = function(position, name, dimensions, text, textColor) {
+    var ScoreboardLine = function(position, name, dimensions, text, textColor) {
 
         // For clearer scope
         theScoreboardLineObjThis = this;
@@ -782,7 +772,7 @@
             var _scoreboardLineEntity = Entities.addEntity(scoreboardLineProperties);
 
             // Add newly created ScoreboardLine entityID to list for property access
-            theScoreboardObjThis.scoreboardLineEntityIdList.push(_scoreboardLineEntity);
+            myDrum.myScoreboard.scoreboardLineEntityIdList.push(_scoreboardLineEntity);
 
         }
     };
@@ -798,10 +788,10 @@
         },
     };
 
-    Drum = function() {
+    var Drum = function() {
 
         // For clearer understanding of scoping
-        theDrumObjThis = this;
+        var theDrumObjThis = this;
 
         // :: Drum State Colors ::
         this.UNCLICKED_COLOR = {color: {red: 0, green: 0, blue: 255}};      // Blue
@@ -815,8 +805,6 @@
             }
         };
 
-        rightHandControllerJointIndex = MyAvatar.getJointIndex("_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND");
-        leftHandControllerJointIndex = MyAvatar.getJointIndex("_CAMERA_RELATIVE_CONTROLLER_LEFTHAND");
         var handInRadius = false;
 
         // ::: Hand Controller Operation :::
@@ -1017,7 +1005,8 @@
 
                         // Default to easy mode
                         myDrum.myScoreboard.screenType = 'easymissed';
-                        myDrum.myScoreboard.textColor = myDrum.myScoreboard.UNCLICKED_BEAT_TEXT_COLOR; // TODO: Create easy mode unclicked color
+                        // TODO: Create easy mode unclicked color
+                        myDrum.myScoreboard.textColor = myDrum.myScoreboard.UNCLICKED_BEAT_TEXT_COLOR;
 
                         if (!myDrum.isEasyMode){
                             myDrum.myScoreboard.screenType = 'unclicked';
@@ -1090,12 +1079,12 @@
             // Get time difference from start of beat to drum hit
             myDrum.hitTimeAfterBeat = myDrum.timeAtStartOfHit - myDrum.timeAtStartOfBeat;
 
-            theDrumObjThis.offset = (theDrumObjThis.hitTimeAfterBeat < theDrumObjThis.getIntervalFromBpm(myDrum.BPM)/2) ?
-                (theDrumObjThis.hitTimeAfterBeat * -1) :
-                theDrumObjThis.getIntervalFromBpm(myDrum.BPM) - theDrumObjThis.hitTimeAfterBeat;
+            myDrum.offset = (myDrum.hitTimeAfterBeat < myDrum.getIntervalFromBpm(myDrum.BPM)/2) ?
+                (myDrum.hitTimeAfterBeat * -1) :
+                myDrum.getIntervalFromBpm(myDrum.BPM) - myDrum.hitTimeAfterBeat;
 
             //  show trailing average of last 20 errors or so
-            theDrumObjThis.averageError = 0.05 * Math.abs(theDrumObjThis.offset) + 0.95 * theDrumObjThis.averageError;
+            myDrum.averageError = 0.05 * Math.abs(myDrum.offset) + 0.95 * myDrum.averageError;
 
             // hit within after beat range
             if(myDrum.hitTimeAfterBeat <=
@@ -1190,7 +1179,7 @@
                 print("NOT THE DRUM OWNER!");
                 return false;
             } else {
-                print("YOU ARE THE DRUM OWNER!");
+                print("YOU ARE THE DRUM OWNER! YEEEEEEE");
                 return true;
             }
         },
@@ -1265,11 +1254,6 @@
         }
     };
 
-    // Make sure object doesn't already exist to avoid local client duplicates
-    // -- Developer's note: -- Oddly enough, if the 'game' hasn't started at least once and the user manually reloads
-    // their scripts, duplicates of this entire object and it's children are spawned each time
-    if(typeof myDrum == "undefined") {
-        myDrum = new Drum();
-    }
+    var myDrum = new Drum();
     return myDrum;
 });
